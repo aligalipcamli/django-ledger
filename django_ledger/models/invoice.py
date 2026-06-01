@@ -22,6 +22,7 @@ from decimal import Decimal
 from typing import Union, Optional, Tuple, Dict
 from uuid import uuid4, UUID
 
+import swapper
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.db import models, transaction, IntegrityError
@@ -333,7 +334,7 @@ class InvoiceModelAbstract(
                                       verbose_name=_('Invoice Number'))
     invoice_status = models.CharField(max_length=10, choices=INVOICE_STATUS, default=INVOICE_STATUS[0][0],
                                       verbose_name=_('Invoice Status'))
-    customer = models.ForeignKey('django_ledger.CustomerModel',
+    customer = models.ForeignKey(swapper.get_model_name('django_ledger', 'CustomerModel'),
                                  on_delete=models.RESTRICT,
                                  verbose_name=_('Customer'))
 

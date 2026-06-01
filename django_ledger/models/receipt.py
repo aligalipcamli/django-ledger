@@ -23,6 +23,7 @@ from decimal import Decimal
 from typing import Literal, Optional
 from uuid import UUID, uuid4
 
+import swapper
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.validators import MinValueValidator
 from django.db import IntegrityError, models, transaction
@@ -275,7 +276,7 @@ class ReceiptModelAbstract(CreateUpdateMixIn, MarkdownNotesMixIn, IOMixIn):
     )
 
     customer_model = models.ForeignKey(
-        'django_ledger.CustomerModel',
+        swapper.get_model_name('django_ledger', 'CustomerModel'),
         on_delete=models.PROTECT,
         verbose_name=_('Customer Model'),
         null=True,

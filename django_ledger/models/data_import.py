@@ -16,6 +16,7 @@ from decimal import Decimal
 from typing import Dict, List, Optional, Set, Union
 from uuid import UUID, uuid4
 
+import swapper
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models import (
@@ -1017,7 +1018,7 @@ class StagedTransactionModelAbstract(CreateUpdateMixIn):
         help_text=_('The Vendor associated with the transaction.'),
     )
     customer_model = models.ForeignKey(
-        'django_ledger.CustomerModel',
+        swapper.get_model_name('django_ledger', 'CustomerModel'),
         on_delete=models.RESTRICT,
         null=True,
         blank=True,

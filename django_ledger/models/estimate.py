@@ -17,6 +17,7 @@ from string import ascii_uppercase, digits
 from typing import Union, Optional, List, Dict
 from uuid import uuid4, UUID
 
+import swapper
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.validators import MinValueValidator, MinLengthValidator
@@ -278,7 +279,11 @@ class EstimateModelAbstract(CreateUpdateMixIn,
                                editable=False,
                                on_delete=models.CASCADE,
                                verbose_name=_('Entity Model'))
-    customer = models.ForeignKey('django_ledger.CustomerModel', on_delete=models.RESTRICT, verbose_name=_('Customer'))
+    customer = models.ForeignKey(
+        swapper.get_model_name('django_ledger', 'CustomerModel'),
+        on_delete=models.RESTRICT,
+        verbose_name=_('Customer'),
+    )
     terms = models.CharField(max_length=10, choices=CONTRACT_TERMS_CHOICES, verbose_name=_('Contract Terms'))
     title = models.CharField(max_length=250,
                              verbose_name=_('Customer Estimate Title'),
