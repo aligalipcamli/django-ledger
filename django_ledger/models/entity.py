@@ -1635,7 +1635,8 @@ class EntityModelAbstract(
         CustomerModelQueryset
             The EntityModel instance CustomerModelQueryset with applied filters.
         """
-        customer_model_qs = self.customermodel_set.all().select_related('entity_model')
+        CustomerModel = lazy_loader.get_customer_model()
+        customer_model_qs = CustomerModel.objects.for_entity(self)
         if active:
             customer_model_qs = customer_model_qs.active()
         return customer_model_qs
@@ -1649,6 +1650,9 @@ class EntityModelAbstract(
         return customer_model_qs.get(uuid__exact=customer_uuid)
 
     def validate_customer(self, customer_model: CustomerModel):
+        CustomerModel = lazy_loader.get_customer_model()
+        if not isinstance(customer_model, CustomerModel):
+            raise EntityModelValidationError('CustomerModel must be an instance of CustomerModel.')
         if customer_model.entity_model_id != self.uuid:
             raise EntityModelValidationError(f'Invalid CustomerModel {self.uuid} for EntityModel {self.uuid}...')
 
@@ -1667,6 +1671,7 @@ class EntityModelAbstract(
         -------
         CustomerModel
         """
+        CustomerModel = lazy_loader.get_customer_model()
         customer_model = CustomerModel(entity_model=self, **customer_model_kwargs)
         customer_model.clean()
         if commit:
@@ -1857,6 +1862,7 @@ class EntityModelAbstract(
             The newly created InvoiceModel in DRAFT state.
         """
         InvoiceModel = lazy_loader.get_invoice_model()
+        CustomerModel = lazy_loader.get_customer_model()
 
         if isinstance(customer_model, CustomerModel):
             if not customer_model.entity_model_id == self.uuid:
@@ -1991,6 +1997,8 @@ class EntityModelAbstract(
         PurchaseOrderModel
             The newly created PurchaseOrderModel in DRAFT state.
         """
+        CustomerModel = lazy_loader.get_customer_model()
+
         if isinstance(customer_model, CustomerModel):
             self.validate_customer(customer_model)
         elif isinstance(customer_model, str):

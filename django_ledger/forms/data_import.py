@@ -24,6 +24,7 @@ from django_ledger.models import (
     ImportJobModel,
     StagedTransactionModel,
 )
+from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import DJANGO_LEDGER_FORM_INPUT_CLASSES
 
 
@@ -138,7 +139,8 @@ class BaseStagedTransactionModelFormSet(BaseModelFormSet):
         self.UNIT_MODEL_CHOICES = [(None, '----')] + [(u.uuid, u) for i, u in enumerate(self.unit_model_qs)]
 
         self.VENDOR_MODEL_QS = entity_model.vendormodel_set.visible().order_by('vendor_name')
-        self.CUSTOMER_MODEL_QS = entity_model.customermodel_set.visible().order_by('customer_name')
+        CustomerModel = lazy_loader.get_customer_model()
+        self.CUSTOMER_MODEL_QS = CustomerModel.objects.for_entity(entity_model).visible().order_by('customer_name')
 
         self.VENDOR_CHOICES = [(None, '-----')] + [(str(v.uuid), v) for v in self.VENDOR_MODEL_QS]
         self.CUSTOMER_CHOICES = [(None, '-----')] + [(str(c.uuid), c) for c in self.CUSTOMER_MODEL_QS]

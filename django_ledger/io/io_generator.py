@@ -30,10 +30,11 @@ from django_ledger.io.io_core import get_localtime, get_localdate
 from django_ledger.io.roles import (INCOME_OPERATIONAL, ASSET_CA_INVENTORY, COGS, ASSET_CA_CASH, ASSET_CA_PREPAID,
                                     LIABILITY_CL_DEFERRED_REVENUE, EXPENSE_OPERATIONAL, EQUITY_CAPITAL,
                                     ASSET_CA_RECEIVABLES, LIABILITY_CL_ACC_PAYABLE)
-from django_ledger.models import (EntityModel, TransactionModel, VendorModel, CustomerModel,
+from django_ledger.models import (EntityModel, TransactionModel, VendorModel,
                                   EntityUnitModel, BankAccountModel, UnitOfMeasureModel, ItemModel,
                                   BillModel, ItemTransactionModel, InvoiceModel,
                                   EstimateModel, LoggingMixIn, InvoiceModelValidationError, ChartOfAccountModel)
+from django_ledger.models.utils import lazy_loader
 from django_ledger.utils import (generate_random_sku, generate_random_upc, generate_random_item_id)
 
 try:
@@ -276,6 +277,7 @@ class EntityDataGenerator(LoggingMixIn):
         for customer in customer_models:
             customer.full_clean()
 
+        CustomerModel = lazy_loader.get_customer_model()
         self.customer_models = CustomerModel.objects.bulk_create(customer_models, ignore_conflicts=True)
 
     def create_bank_accounts(self):

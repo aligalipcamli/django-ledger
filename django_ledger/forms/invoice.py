@@ -13,7 +13,8 @@ from django.forms.models import BaseModelFormSet
 from django.utils.translation import gettext_lazy as _
 
 from django_ledger.io.roles import ASSET_CA_CASH, ASSET_CA_RECEIVABLES, LIABILITY_CL_DEFERRED_REVENUE
-from django_ledger.models import (AccountModel, CustomerModel, InvoiceModel, ItemTransactionModel, ItemModel)
+from django_ledger.models import (AccountModel, InvoiceModel, ItemTransactionModel, ItemModel)
+from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import DJANGO_LEDGER_FORM_INPUT_CLASSES
 
 
@@ -28,6 +29,7 @@ class InvoiceModelCreateForEstimateForm(ModelForm):
 
     def get_customer_queryset(self):
         if 'customer' in self.fields:
+            CustomerModel = lazy_loader.get_customer_model()
             customer_qs = CustomerModel.objects.for_entity(
                 entity_model=self.ENTITY_SLUG
             ).active()

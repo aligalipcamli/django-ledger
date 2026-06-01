@@ -10,7 +10,7 @@ from django.forms import ModelForm, TextInput, EmailInput, NumberInput
 from django.utils.translation import gettext_lazy as _
 
 from django_ledger.forms.utils import validate_cszc
-from django_ledger.models.customer import CustomerModel
+from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import DJANGO_LEDGER_FORM_INPUT_CLASSES
 
 
@@ -20,7 +20,7 @@ class CustomerModelForm(ModelForm):
         validate_cszc(self.cleaned_data)
 
     class Meta:
-        model = CustomerModel
+        model = lazy_loader.get_customer_model()
         fields = [
             'customer_name',
             'customer_code',

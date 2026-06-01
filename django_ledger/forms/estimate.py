@@ -10,8 +10,9 @@ from django import forms
 from django.forms import ModelForm, Select, TextInput, BaseModelFormSet, modelformset_factory, Textarea
 from django.utils.translation import gettext_lazy as _
 
-from django_ledger.models import CustomerModel, ItemTransactionModel, ItemModel, EntityUnitModel
+from django_ledger.models import ItemTransactionModel, ItemModel, EntityUnitModel
 from django_ledger.models.estimate import EstimateModel
+from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import DJANGO_LEDGER_FORM_INPUT_CLASSES
 
 
@@ -24,6 +25,7 @@ class EstimateModelCreateForm(forms.ModelForm):
         self.fields['customer'].queryset = self.get_customer_queryset()
 
     def get_customer_queryset(self):
+        CustomerModel = lazy_loader.get_customer_model()
         return CustomerModel.objects.for_entity(
             entity_model=self.ENTITY_SLUG,
         ).active()

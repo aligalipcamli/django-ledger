@@ -43,6 +43,7 @@ from django_ledger.models import (
     MarkdownNotesMixIn,
     VendorModel,
 )
+from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import (
     DJANGO_LEDGER_DOCUMENT_NUMBER_PADDING,
     DJANGO_LEDGER_RECEIPT_NUMBER_PREFIX,
@@ -153,6 +154,7 @@ class ReceiptModelQuerySet(QuerySet):
         ReceiptModelValidationError
             If the provided value is not a supported type.
         """
+        CustomerModel = lazy_loader.get_customer_model()
         if isinstance(customer_model, str):
             return self.filter(
                 customer_model__customer_number__iexact=customer_model,
@@ -761,6 +763,7 @@ class ReceiptModelAbstract(CreateUpdateMixIn, MarkdownNotesMixIn, IOMixIn):
 
                 # get customer model
                 if customer_model:
+                    CustomerModel = lazy_loader.get_customer_model()
                     if isinstance(customer_model, str):
                         customer_model = CustomerModel.objects.for_entity(entity_model=entity_model).get(
                             customer_number__iexact=customer_model

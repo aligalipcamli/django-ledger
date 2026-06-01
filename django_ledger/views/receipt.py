@@ -20,9 +20,10 @@ from django.views.generic import (
     YearArchiveView,
 )
 
-from django_ledger.models import CustomerModel, EntityModel, LedgerModel, VendorModel
+from django_ledger.models import EntityModel, LedgerModel, VendorModel
 from django_ledger.models.receipt import ReceiptModel, ReceiptModelQuerySet
 from django_ledger.models.transactions import TransactionModel
+from django_ledger.models.utils import lazy_loader
 from django_ledger.views.mixins import (
     DjangoLedgerSecurityMixIn,
     QuarterlyReportMixIn,
@@ -105,6 +106,7 @@ class ReceiptModelListView(BaseReceiptModelViewMixIn, ArchiveIndexView):
         customer_pk = self.kwargs.get('customer_pk')
 
         if customer_pk:
+            CustomerModel = lazy_loader.get_customer_model()
             customer = CustomerModel.objects.for_entity(
                 entity_model=self.AUTHORIZED_ENTITY_MODEL
             ).get(uuid__exact=customer_pk)
@@ -228,6 +230,7 @@ class CustomerReceiptReportListView(ReceiptModelListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        CustomerModel = lazy_loader.get_customer_model()
         customer_model_qs = CustomerModel.objects.for_entity(
             entity_model=self.AUTHORIZED_ENTITY_MODEL
         )

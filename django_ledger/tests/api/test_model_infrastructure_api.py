@@ -2,6 +2,8 @@
 Smoke-level API tests for Django Ledger model infrastructure helpers.
 """
 
+import swapper
+from django.conf import settings
 from django.test import SimpleTestCase
 
 from django_ledger.models.accounts import AccountModel
@@ -64,6 +66,15 @@ class ModelInfrastructureAPITest(SimpleTestCase):
         for getter, expected_model_class in loader_cases:
             with self.subTest(getter=getter.__name__):
                 self.assertIs(getter(), expected_model_class)
+
+    def test_customer_model_uses_swapper_default_setting(self):
+        setting_name = swapper.swappable_setting('django_ledger', 'CustomerModel')
+
+        self.assertEqual(setting_name, 'DJANGO_LEDGER_CUSTOMERMODEL_MODEL')
+        self.assertEqual(settings.DJANGO_LEDGER_CUSTOMERMODEL_MODEL, 'django_ledger.CustomerModel')
+        self.assertEqual(swapper.get_model_name('django_ledger', 'CustomerModel'), 'django_ledger.CustomerModel')
+        self.assertEqual(CustomerModel._meta.swappable, setting_name)
+        self.assertIs(lazy_loader.get_customer_model(), CustomerModel)
 
     def test_lazy_loader_resolves_report_classes(self):
         report_cases = (

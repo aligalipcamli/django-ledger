@@ -3,6 +3,7 @@ Django Ledger created by Miguel Sanda <msanda@arrobalytics.com>.
 Copyright© EDMA Group Inc licensed under the GPLv3 Agreement.
 """
 
+import swapper
 from django.apps import apps
 
 
@@ -146,7 +147,7 @@ class LazyLoader:
         return self.app_config.get_model(self.RECEIPT_MODEL)
 
     def get_customer_model(self):
-        return self.app_config.get_model(self.CUSTOMER_MODEL)
+        return swapper.load_model('django_ledger', 'CustomerModel')
 
     def get_bill_model(self):
         return self.app_config.get_model(self.BILL_MODEL)
