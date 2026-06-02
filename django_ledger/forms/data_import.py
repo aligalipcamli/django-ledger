@@ -32,7 +32,8 @@ class ImportJobModelCreateForm(ModelForm):
     def __init__(self, entity_model: EntityModel, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.ENTITY_MODEL: EntityModel = entity_model
-        self.fields['bank_account_model'].queryset = self.ENTITY_MODEL.bankaccountmodel_set.all().active()
+        BankAccountModel = lazy_loader.get_bank_account_model()
+        self.fields['bank_account_model'].queryset = BankAccountModel.objects.for_entity(self.ENTITY_MODEL).active()
 
     ofx_file = forms.FileField(
         label='Select File...',

@@ -234,7 +234,7 @@ class ImportJobModelAbstract(CreateUpdateMixIn):
     uuid = models.UUIDField(default=uuid4, editable=False, primary_key=True)
     description = models.CharField(max_length=200, verbose_name=_('Description'))
     bank_account_model = models.ForeignKey(
-        'django_ledger.BankAccountModel',
+        swapper.get_model_name('django_ledger', 'BankAccountModel'),
         on_delete=models.CASCADE,
         verbose_name=_('Associated Bank Account Model'),
     )

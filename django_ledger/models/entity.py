@@ -48,7 +48,7 @@ from django_ledger.models.accounts import (
     AccountModel,
     AccountModelQuerySet,
 )
-from django_ledger.models.bank_account import BankAccountModel, BankAccountModelQuerySet
+from django_ledger.models.bank_account import BankAccountModelAbstract, BankAccountModelQuerySet
 from django_ledger.models.chart_of_accounts import (
     ChartOfAccountModel,
     ChartOfAccountModelQuerySet,
@@ -2035,7 +2035,8 @@ class EntityModelAbstract(
         -------
         BankAccountModelQuerySet
         """
-        bank_account_qs = self.bankaccountmodel_set.all().select_related('entity_model')
+        BankAccountModel = lazy_loader.get_bank_account_model()
+        bank_account_qs = BankAccountModel.objects.for_entity(self).select_related('entity_model')
         if active:
             bank_account_qs = bank_account_qs.active()
         return bank_account_qs
@@ -2086,6 +2087,8 @@ class EntityModelAbstract(
 
         if bank_account_model_kwargs is None:
             bank_account_model_kwargs = dict()
+
+        BankAccountModel = lazy_loader.get_bank_account_model()
 
         if account_type not in BankAccountModel.VALID_ACCOUNT_TYPES:
             raise EntityModelValidationError(
@@ -2734,7 +2737,7 @@ class EntityModelAbstract(
     def deposit_capital(
         self,
         amount: Union[Decimal, float],
-        cash_account: Optional[Union[AccountModel, BankAccountModel]] = None,
+        cash_account: Optional[Union[AccountModel, BankAccountModelAbstract]] = None,
         capital_account: Optional[AccountModel] = None,
         description: Optional[str] = None,
         coa_model: Optional[Union[ChartOfAccountModel, UUID, str]] = None,
@@ -2763,6 +2766,7 @@ class EntityModelAbstract(
                 len(account_model_qs)
 
         if cash_account:
+            BankAccountModel = lazy_loader.get_bank_account_model()
             if isinstance(cash_account, BankAccountModel):
                 cash_account = cash_account.account_model
             self.validate_account_model_for_coa(account_model=cash_account, coa_model=coa_model)

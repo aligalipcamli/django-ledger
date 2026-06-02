@@ -113,7 +113,7 @@ class LazyLoader:
         return self.app_config.get_model(self.ENTITY_STATE_MODEL)
 
     def get_bank_account_model(self):
-        return self.app_config.get_model(self.BANK_ACCOUNT_MODEL)
+        return swapper.load_model('django_ledger', 'BankAccountModel')
 
     def get_account_model(self):
         return self.app_config.get_model(self.ACCOUNT_MODEL)

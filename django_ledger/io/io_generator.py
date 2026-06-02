@@ -31,7 +31,7 @@ from django_ledger.io.roles import (INCOME_OPERATIONAL, ASSET_CA_INVENTORY, COGS
                                     LIABILITY_CL_DEFERRED_REVENUE, EXPENSE_OPERATIONAL, EQUITY_CAPITAL,
                                     ASSET_CA_RECEIVABLES, LIABILITY_CL_ACC_PAYABLE)
 from django_ledger.models import (EntityModel, TransactionModel, VendorModel,
-                                  EntityUnitModel, BankAccountModel, UnitOfMeasureModel, ItemModel,
+                                  EntityUnitModel, UnitOfMeasureModel, ItemModel,
                                   BillModel, ItemTransactionModel, InvoiceModel,
                                   EstimateModel, LoggingMixIn, InvoiceModelValidationError, ChartOfAccountModel)
 from django_ledger.models.utils import lazy_loader
@@ -282,6 +282,7 @@ class EntityDataGenerator(LoggingMixIn):
 
     def create_bank_accounts(self):
         self.logger.info(f'Creating entity accounts...')
+        BankAccountModel = lazy_loader.get_bank_account_model()
         bank_account_models = [
 
             # creates a bank cash checking account...
