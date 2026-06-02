@@ -129,11 +129,12 @@ This feature does not provide:
 
 * a generic data migration from built-in bills to a custom bill table,
 * safe late switching of ``DJANGO_LEDGER_BILLMODEL_MODEL`` after migrations,
-* swappable purchase orders, receipts, accounts, entities, ledgers, journal
-  entries, or other core ledger models,
+* swappable accounts, entities, ledgers, journal entries, import jobs, staged
+  transactions, or other core ledger models,
 * built-in tax, withholding, or e-document calculation.
 
 ``BillModel`` support is independent from ``CustomerModel``, ``VendorModel``,
 ``BankAccountModel``, ``UnitOfMeasureModel``, ``ItemModel``, ``InvoiceModel``,
-``EstimateModel``, and ``ItemTransactionModel`` support. Configure each custom
-model explicitly before initial migrations.
+``EstimateModel``, ``ItemTransactionModel``, ``PurchaseOrderModel``, and
+``ReceiptModel`` support. Configure each custom model explicitly before initial
+migrations.

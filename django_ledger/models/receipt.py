@@ -319,6 +319,8 @@ class ReceiptModelAbstract(CreateUpdateMixIn, MarkdownNotesMixIn, IOMixIn):
     staged_transaction_model = models.OneToOneField(
         'django_ledger.StagedTransactionModel',
         on_delete=models.RESTRICT,
+        related_name='receiptmodel',
+        related_query_name='receiptmodel',
         null=True,
         blank=True,
         verbose_name=_('Staged Transaction Model'),
@@ -1038,6 +1040,7 @@ class ReceiptModel(ReceiptModelAbstract):
 
     class Meta:
         abstract = False
+        swappable = swapper.swappable_setting('django_ledger', 'ReceiptModel')
 
 
 def receiptmodel_presave(instance: ReceiptModel, **kwargs):
@@ -1057,4 +1060,8 @@ def receiptmodel_presave(instance: ReceiptModel, **kwargs):
     pass
 
 
-pre_save.connect(receiptmodel_presave, sender=ReceiptModel)
+pre_save.connect(
+    receiver=receiptmodel_presave,
+    sender=swapper.get_model_name('django_ledger', 'ReceiptModel'),
+    dispatch_uid='django_ledger.receiptmodel_presave',
+)

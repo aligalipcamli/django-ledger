@@ -79,11 +79,9 @@ include:
 * Estimate numbering, entity assignment, itemization, and lifecycle transitions
   for the effective estimate model.
 
-``PurchaseOrderModel`` may also be a custom model when its own setting is
-configured before initial migrations. ``ReceiptModel`` remains a fixed Django
-Ledger model.
-``InvoiceModel``, ``BillModel``, and ``ItemTransactionModel`` may be separately
-swappable when their own settings are configured before initial migrations.
+``PurchaseOrderModel``, ``InvoiceModel``, ``BillModel``, ``ReceiptModel``, and
+``ItemTransactionModel`` may be separately swappable when their own settings are
+configured before initial migrations.
 
 Migration Timing
 ----------------
@@ -128,12 +126,13 @@ This feature does not provide:
 
 * a generic data migration from built-in estimates to a custom estimate table,
 * safe late switching of ``DJANGO_LEDGER_ESTIMATEMODEL_MODEL`` after migrations,
-* swappable purchase orders, receipts, accounts, entities, ledgers, journal
-  entries, or other core ledger models,
+* swappable receipts, accounts, entities, ledgers, journal entries, import
+  jobs, staged transactions, or other models through this setting,
 * built-in tax or e-document calculation.
 
 ``EstimateModel`` support is independent from ``CustomerModel``,
 ``VendorModel``, ``BankAccountModel``, ``UnitOfMeasureModel``, ``ItemModel``,
-``InvoiceModel``, ``BillModel``, and ``ItemTransactionModel`` support.
+``InvoiceModel``, ``BillModel``, ``ItemTransactionModel``,
+``PurchaseOrderModel``, and ``ReceiptModel`` support.
 Configure a custom invoice, bill, or item transaction model explicitly if those
 rows also need custom tables.

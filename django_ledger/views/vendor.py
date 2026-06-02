@@ -13,7 +13,6 @@ from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
 from django_ledger.forms.vendor import VendorModelForm
 from django_ledger.models.entity import EntityModel
-from django_ledger.models.receipt import ReceiptModel
 from django_ledger.models.utils import lazy_loader
 from django_ledger.views.mixins import DjangoLedgerSecurityMixIn
 
@@ -110,6 +109,7 @@ class VendorModelDetailView(VendorModelModelBaseView, DetailView):
         context = super().get_context_data(**kwargs)
 
         vendor_model = self.object
+        ReceiptModel = lazy_loader.get_receipt_model()
         receipts_qs = (
             ReceiptModel.objects.for_entity(entity_model=self.AUTHORIZED_ENTITY_MODEL)
             .for_vendor(vendor_model=vendor_model)

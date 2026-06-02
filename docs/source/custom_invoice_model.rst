@@ -124,11 +124,12 @@ This feature does not provide:
 
 * a generic data migration from built-in invoices to a custom invoice table,
 * safe late switching of ``DJANGO_LEDGER_INVOICEMODEL_MODEL`` after migrations,
-* swappable purchase orders, receipts, accounts, entities, ledgers, journal
-  entries, or other core ledger models,
+* swappable accounts, entities, ledgers, journal entries, import jobs, staged
+  transactions, or other core ledger models,
 * built-in tax or e-document calculation.
 
 ``InvoiceModel`` support is independent from ``CustomerModel``, ``VendorModel``,
 ``BankAccountModel``, ``UnitOfMeasureModel``, ``ItemModel``, ``BillModel``,
-``EstimateModel``, and ``ItemTransactionModel`` support. Configure a custom item
-transaction model explicitly if line-item rows also need a custom table.
+``EstimateModel``, ``ItemTransactionModel``, ``PurchaseOrderModel``, and
+``ReceiptModel`` support. Configure a custom item transaction model explicitly
+if line-item rows also need a custom table.

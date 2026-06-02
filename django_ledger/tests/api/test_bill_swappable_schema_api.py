@@ -148,7 +148,8 @@ class BillSwappableSchemaAPITest(TestCase):
         self.assertEqual(EstimateModel._meta.swappable, 'DJANGO_LEDGER_ESTIMATEMODEL_MODEL')
         self.assertEqual(ItemTransactionModel._meta.swappable, 'DJANGO_LEDGER_ITEMTRANSACTIONMODEL_MODEL')
         self.assertEqual(PurchaseOrderModel._meta.swappable, 'DJANGO_LEDGER_PURCHASEORDERMODEL_MODEL')
-        self.assertIsNone(ReceiptModel._meta.swappable)
+        self.assertEqual(ReceiptModel._meta.swappable, 'DJANGO_LEDGER_RECEIPTMODEL_MODEL')
+        self.assertIs(lazy_loader.get_receipt_model(), ReceiptModel)
 
     def test_schema_bill_item_m2m_uses_fixed_item_transaction_through_model(self):
         field = self.CustomBillModel._meta.get_field('bill_items')

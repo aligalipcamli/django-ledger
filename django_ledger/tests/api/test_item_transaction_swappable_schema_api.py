@@ -265,7 +265,8 @@ class ItemTransactionSwappableSchemaAPITest(TestCase):
         self.assertEqual(EstimateModel._meta.swappable, 'DJANGO_LEDGER_ESTIMATEMODEL_MODEL')
         self.assertEqual(PurchaseOrderModel._meta.swappable, 'DJANGO_LEDGER_PURCHASEORDERMODEL_MODEL')
         self.assertIs(lazy_loader.get_purchase_order_model(), PurchaseOrderModel)
-        self.assertIsNone(ReceiptModel._meta.swappable)
+        self.assertEqual(ReceiptModel._meta.swappable, 'DJANGO_LEDGER_RECEIPTMODEL_MODEL')
+        self.assertIs(lazy_loader.get_receipt_model(), ReceiptModel)
         self.assertIs(lazy_loader.get_estimate_model(), EstimateModel)
 
     def test_schema_custom_item_transaction_persists_document_assignment(self):

@@ -109,10 +109,10 @@ This feature does not provide:
   measure table,
 * safe late switching of ``DJANGO_LEDGER_UNITOFMEASUREMODEL_MODEL`` after
   migrations,
-* swappable purchase orders, receipts, or other fixed commercial document
-  models.
+* swappable commercial documents or receipts through this setting.
 
 ``UnitOfMeasureModel`` support is independent from ``CustomerModel``,
 ``VendorModel``, ``BankAccountModel``, ``ItemModel``, ``InvoiceModel``,
-``BillModel``, ``EstimateModel``, and ``ItemTransactionModel`` support.
-Configure each custom model explicitly before initial migrations.
+``BillModel``, ``EstimateModel``, ``ItemTransactionModel``,
+``PurchaseOrderModel``, and ``ReceiptModel`` support. Configure each custom
+model explicitly before initial migrations.

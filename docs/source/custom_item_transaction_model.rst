@@ -101,15 +101,16 @@ Combining Custom Models
 -----------------------
 
 ``ItemTransactionModel`` support can be combined with custom
-``UnitOfMeasureModel``, ``ItemModel``, ``InvoiceModel``, ``BillModel``, and
-``EstimateModel`` settings when all settings are configured before initial
-migrations. The custom item transaction model should keep foreign keys aligned
-with the effective item, invoice, bill, and estimate models by inheriting from
-``ItemTransactionModelAbstract`` or by using equivalent Swapper-aware
-relationships.
+``UnitOfMeasureModel``, ``ItemModel``, ``InvoiceModel``, ``BillModel``,
+``EstimateModel``, and ``PurchaseOrderModel`` settings when all settings are
+configured before initial migrations. The custom item transaction model should
+keep foreign keys aligned with the effective item, invoice, bill, estimate, and
+purchase order models by inheriting from ``ItemTransactionModelAbstract`` or by
+using equivalent Swapper-aware relationships.
 
-Purchase order and receipt models remain fixed Django Ledger models in this
-support slice.
+``ReceiptModel`` may also be a custom model when its own setting is configured
+before initial migrations. ``ImportJobModel`` and ``StagedTransactionModel``
+remain fixed Django Ledger models.
 
 Lemuur Line Items
 -----------------
@@ -137,11 +138,12 @@ This feature does not provide:
 * a generic data migration from built-in line items to a custom line-item table,
 * safe late switching of ``DJANGO_LEDGER_ITEMTRANSACTIONMODEL_MODEL`` after
   migrations,
-* swappable purchase orders, receipts, accounts, entities, ledgers, journal
-  entries, or other core ledger models,
+* swappable receipt, account, entity, ledger, journal entry, import job, or
+  staged transaction models through this setting,
 * built-in tax, discount, withholding, or e-document calculation.
 
 ``ItemTransactionModel`` support is independent from ``CustomerModel``,
 ``VendorModel``, ``BankAccountModel``, ``UnitOfMeasureModel``, ``ItemModel``,
-``InvoiceModel``, ``BillModel``, and ``EstimateModel`` support. Configure each
-custom model explicitly before initial migrations.
+``InvoiceModel``, ``BillModel``, ``EstimateModel``, ``PurchaseOrderModel``, and
+``ReceiptModel`` support. Configure each custom model explicitly before initial
+migrations.

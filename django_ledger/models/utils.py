@@ -152,7 +152,7 @@ class LazyLoader:
         return ItemTransactionModel._meta.get_field(field_name).related_query_name()
 
     def get_receipt_model(self):
-        return self.app_config.get_model(self.RECEIPT_MODEL)
+        return swapper.load_model('django_ledger', 'ReceiptModel')
 
     def get_customer_model(self):
         return swapper.load_model('django_ledger', 'CustomerModel')

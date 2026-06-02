@@ -85,11 +85,11 @@ uses the built-in ``ItemTransactionModel``. Projects that also configure
 ``DJANGO_LEDGER_ITEMTRANSACTIONMODEL_MODEL`` before initial migrations can use
 a custom line-item table with a custom purchase order table.
 
-``EstimateModel`` and ``BillModel`` may also be custom models when their own
-settings are configured before initial migrations.
+``EstimateModel``, ``BillModel``, and ``ReceiptModel`` may also be custom
+models when their own settings are configured before initial migrations.
 
-``ReceiptModel``, ``ImportJobModel``, and ``StagedTransactionModel`` remain
-fixed Django Ledger models.
+``ImportJobModel`` and ``StagedTransactionModel`` remain fixed Django Ledger
+models.
 
 Migration Timing
 ----------------

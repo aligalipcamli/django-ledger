@@ -94,8 +94,7 @@ This feature does not provide:
 
 * a generic data migration from built-in customers to a custom customer table,
 * safe late switching of ``DJANGO_LEDGER_CUSTOMERMODEL_MODEL`` after migrations,
-* swappable purchase orders, receipts, or other fixed commercial document
-  models.
+* swappable commercial documents or receipt models through this setting.
 
 A future system check could warn when a project appears to configure a custom
 customer model after Django Ledger has already been migrated. Such a check is a

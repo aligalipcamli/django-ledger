@@ -94,10 +94,11 @@ This feature does not provide:
 
 * a generic data migration from built-in vendors to a custom vendor table,
 * safe late switching of ``DJANGO_LEDGER_VENDORMODEL_MODEL`` after migrations,
-* swappable purchase orders, receipts, import jobs, staged transactions, or
-  other fixed commercial document models.
+* swappable commercial documents, receipts, import jobs, staged transactions,
+  or other models through this setting.
 
 ``VendorModel`` support is independent from ``CustomerModel``,
 ``BankAccountModel``, ``UnitOfMeasureModel``, ``ItemModel``, ``InvoiceModel``,
-``BillModel``, ``EstimateModel``, and ``ItemTransactionModel`` support.
-Configure each custom model explicitly before initial migrations.
+``BillModel``, ``EstimateModel``, ``ItemTransactionModel``,
+``PurchaseOrderModel``, and ``ReceiptModel`` support. Configure each custom
+model explicitly before initial migrations.

@@ -46,6 +46,7 @@ from django_ledger.models.journal_entry import JournalEntryModel
 from django_ledger.models.mixins import CreateUpdateMixIn
 from django_ledger.models.receipt import ReceiptModel
 from django_ledger.models.transactions import TransactionModel
+from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import DJANGO_LEDGER_MATCH_DAYS_WINDOW, DJANGO_LEDGER_USE_DEPRECATED_BEHAVIOR
 
 
@@ -2093,6 +2094,7 @@ class StagedTransactionModelAbstract(CreateUpdateMixIn):
             if isinstance(receipt_date, datetime):
                 receipt_date = receipt_date.date()
 
+        ReceiptModel = lazy_loader.get_receipt_model()
         receipt_model = ReceiptModel()
 
         if commit:

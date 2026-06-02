@@ -21,7 +21,6 @@ from django.views.generic import (
 from django_ledger.forms.customer import CustomerModelForm
 from django_ledger.models.customer import CustomerModelQueryset
 from django_ledger.models.entity import EntityModel
-from django_ledger.models.receipt import ReceiptModel
 from django_ledger.models.utils import lazy_loader
 from django_ledger.views.mixins import DjangoLedgerSecurityMixIn
 
@@ -118,6 +117,7 @@ class CustomerModelDetailView(CustomerModelModelViewQuerySetMixIn, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         customer = self.object
+        ReceiptModel = lazy_loader.get_receipt_model()
         receipts_qs = (
             ReceiptModel.objects.for_entity(entity_model=self.AUTHORIZED_ENTITY_MODEL)
             .for_customer(customer_model=customer)

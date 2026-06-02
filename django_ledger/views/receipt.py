@@ -43,6 +43,7 @@ class BaseReceiptModelViewMixIn(DjangoLedgerSecurityMixIn):
 
             receipt_type = self.kwargs.get('receipt_type')
             if receipt_type:
+                ReceiptModel = lazy_loader.get_receipt_model()
                 qs = qs.filter(receipt_type__exact=receipt_type)
                 if receipt_type in [
                     ReceiptModel.SALES_RECEIPT,
@@ -95,6 +96,7 @@ class ReceiptModelListView(BaseReceiptModelViewMixIn, ArchiveIndexView):
         receipt_type = self.kwargs.get('receipt_type')
 
         if receipt_type:
+            ReceiptModel = lazy_loader.get_receipt_model()
             context['title'] = ReceiptModel.RECEIPT_TYPES_MAP[receipt_type]
 
         vendor_pk = self.kwargs.get('vendor_pk')

@@ -195,7 +195,10 @@ class PurchaseOrderSwappableSchemaAPITest(TestCase):
         self.assertEqual(EstimateModel._meta.swappable, 'DJANGO_LEDGER_ESTIMATEMODEL_MODEL')
         self.assertEqual(ItemTransactionModel._meta.swappable, 'DJANGO_LEDGER_ITEMTRANSACTIONMODEL_MODEL')
 
-        for model_class in (ReceiptModel, ImportJobModel, StagedTransactionModel):
+        self.assertEqual(ReceiptModel._meta.swappable, 'DJANGO_LEDGER_RECEIPTMODEL_MODEL')
+        self.assertIs(lazy_loader.get_receipt_model(), ReceiptModel)
+
+        for model_class in (ImportJobModel, StagedTransactionModel):
             with self.subTest(model=model_class.__name__):
                 self.assertIsNone(model_class._meta.swappable)
 
