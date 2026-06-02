@@ -736,7 +736,7 @@ class EstimateModelAbstract(CreateUpdateMixIn,
             return
 
         if not itemtxs_qs:
-            itemtxs_qs = self.itemtransactionmodel_set.all()
+            itemtxs_qs = self.get_itemtxs_related_manager().all()
         else:
             self.validate_item_transaction_qs(itemtxs_qs=itemtxs_qs)
 
@@ -1171,7 +1171,7 @@ class EstimateModelAbstract(CreateUpdateMixIn,
         ItemTransactionModelQuerySet
         """
         if not queryset:
-            queryset = self.itemtransactionmodel_set.select_related('item_model').all()
+            queryset = self.get_itemtxs_related_manager().select_related('item_model').all()
         else:
             self.validate_item_transaction_qs(queryset)
         # todo: this needs to return an aggregate for consistency...
@@ -1392,6 +1392,8 @@ class EstimateModelAbstract(CreateUpdateMixIn,
         itemtxs_qs: ItemTransactionModelQuerySet
             ItemTransactionModelQuerySet to validate.
         """
+        ItemTransactionModel = lazy_loader.get_item_transaction_model()
+
         if not isinstance(itemtxs_qs, ItemTransactionModelQuerySet):
             if not all([
                 isinstance(i, ItemTransactionModel) for i in itemtxs_qs

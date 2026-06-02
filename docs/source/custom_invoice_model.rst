@@ -72,11 +72,13 @@ include:
 * Invoice forms and invoice views when imported after the custom setting is
   configured.
 * ``ItemTransactionModel.invoice_model``.
-* ``InvoiceModel.invoice_items`` through the fixed ``ItemTransactionModel``.
+* ``InvoiceModel.invoice_items`` through the effective ``ItemTransactionModel``.
 * Invoice numbering and entity assignment for the effective invoice model.
 
-``ItemTransactionModel`` remains fixed. It points to the effective invoice
-model, but item transaction rows are not themselves swappable.
+If no custom item transaction model is configured, invoice itemization uses the
+built-in ``ItemTransactionModel``. Projects that also configure
+``DJANGO_LEDGER_ITEMTRANSACTIONMODEL_MODEL`` before initial migrations can use a
+custom line-item table with a custom invoice table.
 
 Migration Timing
 ----------------
@@ -122,11 +124,11 @@ This feature does not provide:
 
 * a generic data migration from built-in invoices to a custom invoice table,
 * safe late switching of ``DJANGO_LEDGER_INVOICEMODEL_MODEL`` after migrations,
-* swappable item transactions, bills, estimates, purchase orders, receipts,
-  accounts, entities, ledgers, journal entries, or other core ledger models,
+* swappable bills, estimates, purchase orders, receipts, accounts, entities,
+  ledgers, journal entries, or other core ledger models,
 * built-in tax or e-document calculation.
 
 ``InvoiceModel`` support is independent from ``CustomerModel``, ``VendorModel``,
-``BankAccountModel``, ``UnitOfMeasureModel``, and ``ItemModel`` support.
-Enabling a custom invoice model does not make line items or other commercial
-document models swappable.
+``BankAccountModel``, ``UnitOfMeasureModel``, ``ItemModel``, and
+``ItemTransactionModel`` support. Configure a custom item transaction model
+explicitly if line-item rows also need a custom table.

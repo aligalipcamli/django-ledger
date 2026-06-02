@@ -247,7 +247,7 @@ class PurchaseOrderModelAbstract(CreateUpdateMixIn,
     date_canceled = models.DateField(null=True, blank=True, verbose_name=_('Canceled Date'))
 
     po_items = models.ManyToManyField(swapper.get_model_name('django_ledger', 'ItemModel'),
-                                      through='django_ledger.ItemTransactionModel',
+                                      through=swapper.get_model_name('django_ledger', 'ItemTransactionModel'),
                                       through_fields=('po_model', 'item_model'),
                                       verbose_name=_('Purchase Order Items'))
 
@@ -413,7 +413,7 @@ class PurchaseOrderModelAbstract(CreateUpdateMixIn,
         A tuple: ItemTransactionModelQuerySet, dict
         """
         if not queryset:
-            queryset = self.itemtransactionmodel_set.all().select_related('bill_model', 'item_model')
+            queryset = self.get_itemtxs_related_manager().all().select_related('bill_model', 'item_model')
         else:
             self.validate_item_transaction_qs(queryset)
 
@@ -857,7 +857,8 @@ class PurchaseOrderModelAbstract(CreateUpdateMixIn,
         self.po_status = self.PO_STATUS_APPROVED
         self.clean()
         if commit:
-            self.itemtransactionmodel_set.all().update(po_item_status=ItemTransactionModel.STATUS_NOT_ORDERED)
+            ItemTransactionModel = lazy_loader.get_item_transaction_model()
+            self.get_itemtxs_related_manager().all().update(po_item_status=ItemTransactionModel.STATUS_NOT_ORDERED)
             self.save(update_fields=[
                 'date_approved',
                 'po_status',
@@ -1020,6 +1021,7 @@ class PurchaseOrderModelAbstract(CreateUpdateMixIn,
         self.clean()
 
         if commit:
+            ItemTransactionModel = lazy_loader.get_item_transaction_model()
             if isinstance(po_items, list):
                 ItemTransactionModel.objects.filter(
                     uuid__in=[i.uuid for i in po_items]
@@ -1159,7 +1161,8 @@ class PurchaseOrderModelAbstract(CreateUpdateMixIn,
         -------
         BillModelQuerySet
         """
-        return BillModel.objects.filter(itemtransactionmodel__po_model__uuid__exact=self.uuid)
+        itemtxs_related_query_name = lazy_loader.get_item_transaction_model_related_query_name('bill_model')
+        return BillModel.objects.filter(**{f'{itemtxs_related_query_name}__po_model__uuid__exact': self.uuid})
 
     def get_status_action_date(self):
         """

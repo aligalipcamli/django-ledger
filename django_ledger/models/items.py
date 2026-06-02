@@ -951,7 +951,7 @@ class ItemTransactionModelQuerySet(QuerySet):
         ItemTransactionModelQuerySet
             A queryset containing only the items with the status 'received'.
         """
-        return self.filter(po_item_status=ItemTransactionModel.STATUS_RECEIVED)
+        return self.filter(po_item_status=self.model.STATUS_RECEIVED)
 
     def in_transit(self) -> 'ItemTransactionModelQuerySet':
         """
@@ -962,7 +962,7 @@ class ItemTransactionModelQuerySet(QuerySet):
         ItemTransactionModelQuerySet
             A queryset containing items whose status is "in transit".
         """
-        return self.filter(po_item_status=ItemTransactionModel.STATUS_IN_TRANSIT)
+        return self.filter(po_item_status=self.model.STATUS_IN_TRANSIT)
 
     def is_ordered(self) -> 'ItemTransactionModelQuerySet':
         """
@@ -973,7 +973,7 @@ class ItemTransactionModelQuerySet(QuerySet):
         ItemTransactionModelQuerySet
             A filtered queryset containing items with the status "ORDERED".
         """
-        return self.filter(po_item_status=ItemTransactionModel.STATUS_ORDERED)
+        return self.filter(po_item_status=self.model.STATUS_ORDERED)
 
     def is_orphan(self) -> 'ItemTransactionModelQuerySet':
         """
@@ -1302,7 +1302,7 @@ class ItemTransactionModelManager(Manager):
                     (
                             Q(bill_model__isnull=False) &
                             Q(po_model__po_status=PurchaseOrderModel.PO_STATUS_APPROVED) &
-                            Q(po_item_status__exact=ItemTransactionModel.STATUS_RECEIVED)
+                            Q(po_item_status__exact=self.model.STATUS_RECEIVED)
                     ) |
 
                     # invoiced inventory...
@@ -1347,9 +1347,9 @@ class ItemTransactionModelManager(Manager):
             Q(item_model__for_inventory=True) &
             Q(bill_model__isnull=False) &
             Q(po_item_status__in=[
-                ItemTransactionModel.STATUS_ORDERED,
-                ItemTransactionModel.STATUS_IN_TRANSIT,
-                ItemTransactionModel.STATUS_RECEIVED,
+                self.model.STATUS_ORDERED,
+                self.model.STATUS_IN_TRANSIT,
+                self.model.STATUS_RECEIVED,
             ])
         )
 
@@ -1367,17 +1367,17 @@ class ItemTransactionModelManager(Manager):
     @deprecated_entity_slug_behavior
     def inventory_pipeline_ordered(self, entity_model: 'EntityModel | str | UUID' = None, **kwargs):
         qs = self.inventory_pipeline(entity_model=entity_model)
-        return qs.filter(po_item_status=ItemTransactionModel.STATUS_ORDERED)
+        return qs.filter(po_item_status=self.model.STATUS_ORDERED)
 
     @deprecated_entity_slug_behavior
     def inventory_pipeline_in_transit(self, entity_model: 'EntityModel | str | UUID' = None, **kwargs):
         qs = self.inventory_pipeline(entity_model=entity_model)
-        return qs.filter(po_item_status=ItemTransactionModel.STATUS_IN_TRANSIT)
+        return qs.filter(po_item_status=self.model.STATUS_IN_TRANSIT)
 
     @deprecated_entity_slug_behavior
     def inventory_pipeline_received(self, entity_model: 'EntityModel | str | UUID' = None, **kwargs):
         qs = self.inventory_pipeline(entity_model=entity_model)
-        return qs.filter(po_item_status=ItemTransactionModel.STATUS_RECEIVED)
+        return qs.filter(po_item_status=self.model.STATUS_RECEIVED)
 
     @deprecated_entity_slug_behavior
     def inventory_invoiced(self, entity_model: 'EntityModel | str | UUID' = None, **kwargs):
@@ -1784,6 +1784,7 @@ class ItemTransactionModel(ItemTransactionModelAbstract):
 
     class Meta(ItemTransactionModelAbstract.Meta):
         abstract = False
+        swappable = swapper.swappable_setting('django_ledger', 'ItemTransactionModel')
 
 
 class ItemModel(ItemModelAbstract):

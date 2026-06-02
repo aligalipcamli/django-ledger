@@ -98,7 +98,7 @@ class EstimateModelDetailView(DjangoLedgerSecurityMixIn, EstimateModelModelViewQ
         context['header_title'] = self.PAGE_TITLE
         context['header_subtitle'] = ce_model.estimate_number
         context['header_subtitle_icon'] = 'eos-icons:job'
-        context['estimate_item_list'] = ce_model.itemtransactionmodel_set.all()
+        context['estimate_item_list'] = ce_model.get_itemtxs_related_manager().all()
 
         # PO Model Queryset...
         po_qs = ce_model.purchaseordermodel_set.for_entity(
@@ -130,7 +130,8 @@ class EstimateModelDetailView(DjangoLedgerSecurityMixIn, EstimateModelModelViewQ
 
     def get_queryset(self):
         qs = super().get_queryset()
-        return qs.prefetch_related('itemtransactionmodel_set')
+        estimate_itemtxs_related_name = lazy_loader.get_item_transaction_model_related_name('ce_model')
+        return qs.prefetch_related(estimate_itemtxs_related_name)
 
 
 class EstimateModelUpdateView(DjangoLedgerSecurityMixIn, EstimateModelModelViewQuerySetMixIn, UpdateView):

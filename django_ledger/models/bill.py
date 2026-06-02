@@ -406,7 +406,7 @@ class BillModelAbstract(
     )
     bill_items = models.ManyToManyField(
         swapper.get_model_name('django_ledger', 'ItemModel'),
-        through='django_ledger.ItemTransactionModel',
+        through=swapper.get_model_name('django_ledger', 'ItemTransactionModel'),
         through_fields=('bill_model', 'item_model'),
         verbose_name=_('Bill Items'),
     )
@@ -621,7 +621,7 @@ class BillModelAbstract(
         A tuple: ItemTransactionModelQuerySet, dict
         """
         if not queryset:
-            queryset = self.itemtransactionmodel_set.all().select_related(
+            queryset = self.get_itemtxs_related_manager().all().select_related(
                 'item_model', 'entity_unit', 'po_model', 'bill_model'
             )
         else:
@@ -675,7 +675,7 @@ class BillModelAbstract(
         """
 
         if not queryset:
-            queryset = self.itemtransactionmodel_set.all()
+            queryset = self.get_itemtxs_related_manager().all()
         else:
             self.validate_itemtxs_qs(queryset)
 
@@ -1224,7 +1224,7 @@ class BillModelAbstract(
                 )
 
         if not itemtxs_qs:
-            itemtxs_qs = self.itemtransactionmodel_set.all()
+            itemtxs_qs = self.get_itemtxs_related_manager().all()
         else:
             self.validate_itemtxs_qs(queryset=itemtxs_qs)
 
@@ -1471,7 +1471,7 @@ class BillModelAbstract(
         self.clean()
 
         if not itemtxs_qs:
-            itemtxs_qs = self.itemtransactionmodel_set.all()
+            itemtxs_qs = self.get_itemtxs_related_manager().all()
         else:
             self.validate_itemtxs_qs(queryset=itemtxs_qs)
 

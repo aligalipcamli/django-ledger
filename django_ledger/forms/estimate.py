@@ -10,7 +10,7 @@ from django import forms
 from django.forms import ModelForm, Select, TextInput, BaseModelFormSet, modelformset_factory, Textarea
 from django.utils.translation import gettext_lazy as _
 
-from django_ledger.models import ItemTransactionModel, EntityUnitModel
+from django_ledger.models import EntityUnitModel
 from django_ledger.models.estimate import EstimateModel
 from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import DJANGO_LEDGER_FORM_INPUT_CLASSES
@@ -81,7 +81,7 @@ class DraftEstimateModelUpdateForm(BaseEstimateModelUpdateForm):
 
 class EstimateItemModelForm(ModelForm):
     class Meta:
-        model = ItemTransactionModel
+        model = lazy_loader.get_item_transaction_model()
         fields = [
             'item_model',
             'entity_unit',
@@ -138,7 +138,7 @@ class BaseEstimateItemModelFormset(BaseModelFormSet):
 
 
 CanEditEstimateItemModelFormset = modelformset_factory(
-    model=ItemTransactionModel,
+    model=lazy_loader.get_item_transaction_model(),
     form=EstimateItemModelForm,
     formset=BaseEstimateItemModelFormset,
     can_delete=True,
@@ -146,7 +146,7 @@ CanEditEstimateItemModelFormset = modelformset_factory(
 )
 
 ReadOnlyEstimateItemModelFormset = modelformset_factory(
-    model=ItemTransactionModel,
+    model=lazy_loader.get_item_transaction_model(),
     form=EstimateItemModelForm,
     formset=BaseEstimateItemModelFormset,
     can_delete=False,

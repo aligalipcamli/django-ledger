@@ -122,10 +122,10 @@ This feature does not provide:
 
 * a generic data migration from built-in items to a custom item table,
 * safe late switching of ``DJANGO_LEDGER_ITEMMODEL_MODEL`` after migrations,
-* swappable item transaction, bill, invoice, estimate, purchase order, receipt,
-  account, entity, or other core ledger models.
+* swappable bill, estimate, purchase order, receipt, account, entity, or other
+  core ledger models.
 
 ``ItemModel`` support is independent from ``CustomerModel``, ``VendorModel``,
-``BankAccountModel``, and ``UnitOfMeasureModel`` support. Enabling a custom
-item model does not make item transaction or commercial document models
-swappable.
+``BankAccountModel``, ``UnitOfMeasureModel``, ``InvoiceModel``, and
+``ItemTransactionModel`` support. Configure a custom item transaction model
+explicitly if line-item rows also need a custom table.

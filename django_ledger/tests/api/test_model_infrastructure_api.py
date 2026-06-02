@@ -103,6 +103,18 @@ class ModelInfrastructureAPITest(SimpleTestCase):
         self.assertEqual(ItemModel._meta.swappable, setting_name)
         self.assertIs(lazy_loader.get_item_model(), ItemModel)
 
+    def test_item_transaction_model_uses_swapper_default_setting(self):
+        setting_name = swapper.swappable_setting('django_ledger', 'ItemTransactionModel')
+
+        self.assertEqual(setting_name, 'DJANGO_LEDGER_ITEMTRANSACTIONMODEL_MODEL')
+        self.assertEqual(settings.DJANGO_LEDGER_ITEMTRANSACTIONMODEL_MODEL, 'django_ledger.ItemTransactionModel')
+        self.assertEqual(
+            swapper.get_model_name('django_ledger', 'ItemTransactionModel'),
+            'django_ledger.ItemTransactionModel',
+        )
+        self.assertEqual(ItemTransactionModel._meta.swappable, setting_name)
+        self.assertIs(lazy_loader.get_item_transaction_model(), ItemTransactionModel)
+
     def test_unit_of_measure_model_uses_swapper_default_setting(self):
         setting_name = swapper.swappable_setting('django_ledger', 'UnitOfMeasureModel')
 

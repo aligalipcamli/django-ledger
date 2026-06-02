@@ -25,6 +25,7 @@ Created and developed by `Miguel Sanda <https://www.miguelsanda.com>`_.
    ./custom_unit_of_measure_model
    ./custom_item_model
    ./custom_invoice_model
+   ./custom_item_transaction_model
 
 
 

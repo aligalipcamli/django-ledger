@@ -13,7 +13,7 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic import ListView, DetailView
 
 from django_ledger.models import EntityModel
-from django_ledger.models.items import ItemTransactionModel
+from django_ledger.models.utils import lazy_loader
 from django_ledger.views.mixins import DjangoLedgerSecurityMixIn
 
 
@@ -49,6 +49,7 @@ class InventoryListView(DjangoLedgerSecurityMixIn, ListView):
 
     def get_queryset(self):
         if self.queryset is None:
+            ItemTransactionModel = lazy_loader.get_item_transaction_model()
             self.queryset = ItemTransactionModel.objects.inventory_pipeline_aggregate(
                 entity_model=self.AUTHORIZED_ENTITY_MODEL
             )
@@ -66,6 +67,7 @@ class InventoryRecountView(DjangoLedgerSecurityMixIn, DetailView):
         return super().get_queryset()
 
     def counted_inventory(self):
+        ItemTransactionModel = lazy_loader.get_item_transaction_model()
         return ItemTransactionModel.objects.inventory_count(entity_model=self.AUTHORIZED_ENTITY_MODEL)
 
     def recorded_inventory(self, queryset=None, as_values=True):

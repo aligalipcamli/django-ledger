@@ -19,7 +19,8 @@ from django_ledger.forms.purchase_order import (PurchaseOrderModelCreateForm, Ba
                                                 DraftPurchaseOrderModelUpdateForm, ReviewPurchaseOrderModelUpdateForm,
                                                 ApprovedPurchaseOrderModelUpdateForm,
                                                 get_po_itemtxs_formset_class)
-from django_ledger.models import PurchaseOrderModel, ItemTransactionModel, EstimateModel
+from django_ledger.models import PurchaseOrderModel, EstimateModel
+from django_ledger.models.utils import lazy_loader
 from django_ledger.views.mixins import DjangoLedgerSecurityMixIn
 
 
@@ -308,12 +309,14 @@ class PurchaseOrderModelUpdateView(PurchaseOrderModelModelViewQuerySetMixIn, Upd
                        })
 
     def get_po_itemtxs_qs(self, po_model: PurchaseOrderModel):
-        return po_model.itemtransactionmodel_set.select_related('bill_model', 'po_model').order_by('created')
+        po_itemtxs_related_name = lazy_loader.get_item_transaction_model_related_name('po_model')
+        return getattr(po_model, po_itemtxs_related_name).select_related('bill_model', 'po_model').order_by('created')
 
     def form_valid(self, form: BasePurchaseOrderModelUpdateForm):
         po_model: PurchaseOrderModel = form.save(commit=False)
 
         if form.has_changed():
+            ItemTransactionModel = lazy_loader.get_item_transaction_model()
             po_items_qs = ItemTransactionModel.objects.for_po(
                 entity_model=self.kwargs['entity_slug'],
                 po_pk=po_model.uuid,
@@ -371,7 +374,7 @@ class PurchaseOrderModelDetailView(PurchaseOrderModelModelViewQuerySetMixIn, Det
 
         po_model: PurchaseOrderModel = self.object
         po_items_qs, item_data = po_model.get_itemtxs_data(
-            queryset=po_model.itemtransactionmodel_set.all().select_related('item_model', 'bill_model')
+            queryset=po_model.get_itemtxs_related_manager().all().select_related('item_model', 'bill_model')
         )
         context['po_items'] = po_items_qs
         context['po_total_amount'] = sum(
@@ -406,7 +409,7 @@ class PurchaseOrderModelDeleteView(PurchaseOrderModelModelViewQuerySetMixIn, Del
     def form_valid(self, request, *args, **kwargs):
         po_model: PurchaseOrderModel = self.get_object()
         self.object = po_model
-        po_items_qs = po_model.itemtransactionmodel_set.filter(bill_model__isnull=False)
+        po_items_qs = po_model.get_itemtxs_related_manager().filter(bill_model__isnull=False)
         if po_items_qs.exists():
             messages.add_message(request,
                                  message=f'Cannot delete {po_model.po_number} because it has related bills.',

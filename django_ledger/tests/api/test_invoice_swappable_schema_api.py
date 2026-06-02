@@ -150,9 +150,10 @@ class InvoiceSwappableSchemaAPITest(TestCase):
 
         self.assertEqual(errors, [])
 
-    def test_schema_item_transaction_and_other_documents_remain_fixed(self):
+    def test_schema_item_transaction_defaults_to_builtin_and_other_documents_remain_fixed(self):
         self.assertEqual(ItemTransactionModel._meta.label, 'django_ledger.ItemTransactionModel')
-        self.assertIsNone(ItemTransactionModel._meta.swappable)
+        self.assertEqual(ItemTransactionModel._meta.swappable, 'DJANGO_LEDGER_ITEMTRANSACTIONMODEL_MODEL')
+        self.assertIs(lazy_loader.get_item_transaction_model(), ItemTransactionModel)
 
         for model_class in (BillModel, EstimateModel, PurchaseOrderModel, ReceiptModel):
             with self.subTest(model=model_class.__name__):

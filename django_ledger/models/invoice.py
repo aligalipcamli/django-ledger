@@ -362,7 +362,7 @@ class InvoiceModelAbstract(
                                        default=dict,
                                        verbose_name=_('Invoice Additional Info'))
     invoice_items = models.ManyToManyField(swapper.get_model_name('django_ledger', 'ItemModel'),
-                                           through='django_ledger.ItemTransactionModel',
+                                           through=swapper.get_model_name('django_ledger', 'ItemTransactionModel'),
                                            through_fields=('invoice_model', 'item_model'),
                                            verbose_name=_('Invoice Items'))
 
@@ -551,7 +551,7 @@ class InvoiceModelAbstract(
         """
 
         if not queryset:
-            queryset = self.itemtransactionmodel_set.all().select_related(
+            queryset = self.get_itemtxs_related_manager().all().select_related(
                 'item_model',
                 'entity_unit',
                 'po_model',
@@ -606,7 +606,7 @@ class InvoiceModelAbstract(
             Optional pre-fetched ItemModelTransactionQueryset to use. Avoids additional DB query if provided.
         """
         if not queryset:
-            queryset = self.itemtransactionmodel_set.all()
+            queryset = self.get_itemtxs_related_manager().all()
         else:
             self.validate_itemtxs_qs(queryset)
 
@@ -1132,7 +1132,7 @@ class InvoiceModelAbstract(
         self.date_in_review = get_localdate() if not date_in_review else date_in_review
 
         if not itemtxs_qs:
-            itemtxs_qs = self.itemtransactionmodel_set.all()
+            itemtxs_qs = self.get_itemtxs_related_manager().all()
         if not itemtxs_qs.count():
             raise InvoiceModelValidationError(message='Cannot review an Invoice without items...')
         if not self.amount_due:

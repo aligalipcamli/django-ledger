@@ -20,9 +20,9 @@ from django_ledger.io.io_core import get_localdate, get_localtime
 from django_ledger.io.io_generator import EntityDataGenerator
 from django_ledger.models import (
     EntityModel,
-    ItemTransactionModel,
     TransactionModel
 )
+from django_ledger.models.utils import lazy_loader
 from django_ledger.views.mixins import (
     QuarterlyReportMixIn, YearlyReportMixIn,
     MonthlyReportMixIn, DateReportMixIn, DjangoLedgerSecurityMixIn, EntityUnitMixIn,
@@ -145,6 +145,7 @@ class EntityDeleteView(DjangoLedgerSecurityMixIn, EntityModelModelViewQuerySetMi
         entity_model.default_coa = None
         entity_model.save(update_fields=['default_coa'])
 
+        ItemTransactionModel = lazy_loader.get_item_transaction_model()
         ItemTransactionModel.objects.for_entity(
             entity_model=self.AUTHORIZED_ENTITY_MODEL
         ).delete()

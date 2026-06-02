@@ -13,7 +13,7 @@ from django.forms.models import BaseModelFormSet
 from django.utils.translation import gettext_lazy as _
 
 from django_ledger.io.roles import ASSET_CA_CASH, ASSET_CA_RECEIVABLES, LIABILITY_CL_DEFERRED_REVENUE
-from django_ledger.models import AccountModel, ItemTransactionModel
+from django_ledger.models import AccountModel
 from django_ledger.models.invoice import InvoiceModelAbstract
 from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import DJANGO_LEDGER_FORM_INPUT_CLASSES
@@ -206,7 +206,7 @@ class InvoiceItemForm(ModelForm):
         return cleaned_data
 
     class Meta:
-        model = ItemTransactionModel
+        model = lazy_loader.get_item_transaction_model()
         fields = [
             'item_model',
             'unit_cost',
@@ -252,12 +252,14 @@ class BaseInvoiceItemTransactionFormset(BaseModelFormSet):
 
     def get_queryset(self):
         if not self.queryset:
+            ItemTransactionModel = lazy_loader.get_item_transaction_model()
             self.queryset = ItemTransactionModel.objects.for_invoice(
                 entity_model=self.ENTITY_SLUG,
                 invoice_pk=self.INVOICE_MODEL.uuid
             )
         else:
-            self.queryset = self.INVOICE_MODEL.itemtransactionmodel_set.all()
+            itemtxs_related_name = lazy_loader.get_item_transaction_model_related_name('invoice_model')
+            self.queryset = getattr(self.INVOICE_MODEL, itemtxs_related_name).all()
         return self.queryset
 
     def get_form_kwargs(self, index):
@@ -271,7 +273,7 @@ class BaseInvoiceItemTransactionFormset(BaseModelFormSet):
 def get_invoice_itemtxs_formset_class(invoice_model: InvoiceModelAbstract):
     can_delete = invoice_model.can_edit_items()
     return modelformset_factory(
-        model=ItemTransactionModel,
+        model=lazy_loader.get_item_transaction_model(),
         form=InvoiceItemForm,
         formset=BaseInvoiceItemTransactionFormset,
         can_delete=can_delete,

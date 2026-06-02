@@ -5,8 +5,7 @@ from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
 
 from django_ledger.io.roles import ASSET_CA_CASH, ASSET_CA_PREPAID, LIABILITY_CL_ACC_PAYABLE
-from django_ledger.models import (AccountModel, BillModel, ItemTransactionModel,
-                                  EntityUnitModel, EntityModel)
+from django_ledger.models import AccountModel, BillModel, EntityUnitModel, EntityModel
 from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import DJANGO_LEDGER_FORM_INPUT_CLASSES
 
@@ -218,7 +217,7 @@ class BillItemTransactionForm(ModelForm):
 
     def clean(self):
         cleaned_data = super(BillItemTransactionForm, self).clean()
-        itemtxs_model: ItemTransactionModel = self.instance
+        itemtxs_model = self.instance
         if itemtxs_model.po_model is not None:
             quantity = cleaned_data['quantity']
             if quantity > itemtxs_model.po_quantity:
@@ -226,7 +225,7 @@ class BillItemTransactionForm(ModelForm):
         return cleaned_data
 
     class Meta:
-        model = ItemTransactionModel
+        model = lazy_loader.get_item_transaction_model()
         fields = [
             'item_model',
             'unit_cost',
@@ -258,7 +257,8 @@ class BaseBillItemTransactionFormset(BaseModelFormSet):
         super().__init__(*args, **kwargs)
         self.BILL_MODEL = bill_model
         self.ENTITY_MODEL = entity_model
-        self.queryset = self.BILL_MODEL.itemtransactionmodel_set.select_related(
+        itemtxs_related_name = lazy_loader.get_item_transaction_model_related_name('bill_model')
+        self.queryset = getattr(self.BILL_MODEL, itemtxs_related_name).select_related(
             'item_model',
             'po_model',
             'bill_model'
@@ -278,7 +278,7 @@ class BaseBillItemTransactionFormset(BaseModelFormSet):
                 form.fields['unit_cost'].disabled = True
                 form.fields['entity_unit'].disabled = True
 
-            instance: ItemTransactionModel = form.instance
+            instance = form.instance
             if instance.po_model_id:
                 form.fields['item_model'].disabled = True
                 form.fields['entity_unit'].disabled = True
@@ -286,7 +286,7 @@ class BaseBillItemTransactionFormset(BaseModelFormSet):
 
 def get_bill_itemtxs_formset_class(bill_model: BillModel):
     BillItemTransactionFormset = modelformset_factory(
-        model=ItemTransactionModel,
+        model=lazy_loader.get_item_transaction_model(),
         form=BillItemTransactionForm,
         formset=BaseBillItemTransactionFormset,
         can_delete=True,

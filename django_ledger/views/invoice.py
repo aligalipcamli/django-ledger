@@ -237,7 +237,7 @@ class InvoiceModelUpdateView(DjangoLedgerSecurityMixIn, InvoiceModelModelViewQue
                                  extra_tags='is-info')
 
         if not itemtxs_formset:
-            itemtxs_qs = invoice_model.itemtransactionmodel_set.all().select_related('item_model')
+            itemtxs_qs = invoice_model.get_itemtxs_related_manager().all().select_related('item_model')
             itemtxs_qs, itemtxs_agg = invoice_model.get_itemtxs_data(queryset=itemtxs_qs)
             invoice_itemtxs_formset_class = get_invoice_itemtxs_formset_class(invoice_model)
             itemtxs_formset = invoice_itemtxs_formset_class(
@@ -264,7 +264,8 @@ class InvoiceModelUpdateView(DjangoLedgerSecurityMixIn, InvoiceModelModelViewQue
 
     def get_queryset(self):
         qs = super().get_queryset()
-        return qs.prefetch_related('itemtransactionmodel_set')
+        invoice_itemtxs_related_name = lazy_loader.get_item_transaction_model_related_name('invoice_model')
+        return qs.prefetch_related(invoice_itemtxs_related_name)
 
     def form_valid(self, form):
         invoice_model: InvoiceModel = form.save(commit=False)

@@ -10,7 +10,7 @@ from django.forms import (ModelForm, DateInput, TextInput, Select, BaseModelForm
                           modelformset_factory, Textarea, BooleanField, ValidationError)
 from django.utils.translation import gettext_lazy as _
 
-from django_ledger.models import PurchaseOrderModel, ItemTransactionModel, EntityUnitModel
+from django_ledger.models import PurchaseOrderModel, EntityUnitModel
 from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import DJANGO_LEDGER_FORM_INPUT_CLASSES
 
@@ -96,7 +96,7 @@ class PurchaseOrderItemTransactionForm(ModelForm):
     create_bill = BooleanField(required=False)
 
     class Meta:
-        model = ItemTransactionModel
+        model = lazy_loader.get_item_transaction_model()
         fields = [
             'item_model',
             'po_unit_cost',
@@ -126,7 +126,8 @@ class PurchaseOrderItemTransactionForm(ModelForm):
     def clean(self):
         cleaned_data = super(PurchaseOrderItemTransactionForm, self).clean()
         po_item_status = cleaned_data['po_item_status']
-        po_item_model: ItemTransactionModel = self.instance
+        ItemTransactionModel = lazy_loader.get_item_transaction_model()
+        po_item_model = self.instance
         if 'po_item_status' in self.changed_data:
             po_model: PurchaseOrderModel = getattr(self, 'PO_MODEL')
             if po_model.po_status == po_model.PO_STATUS_APPROVED:
@@ -186,7 +187,7 @@ class BasePurchaseOrderItemFormset(BaseModelFormSet):
 
 
 CanEditPurchaseOrderItemFormset = modelformset_factory(
-    model=ItemTransactionModel,
+    model=lazy_loader.get_item_transaction_model(),
     form=PurchaseOrderItemTransactionForm,
     formset=BasePurchaseOrderItemFormset,
     can_delete=True,
@@ -194,7 +195,7 @@ CanEditPurchaseOrderItemFormset = modelformset_factory(
 )
 
 ReadOnlyPurchaseOrderItemFormset = modelformset_factory(
-    model=ItemTransactionModel,
+    model=lazy_loader.get_item_transaction_model(),
     form=PurchaseOrderItemTransactionForm,
     formset=BasePurchaseOrderItemFormset,
     can_delete=False,

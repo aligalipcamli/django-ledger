@@ -33,6 +33,7 @@ from django_ledger.forms.bill import (
 from django_ledger.io.io_core import get_localdate
 from django_ledger.models import EntityModel, PurchaseOrderModel, EstimateModel, BillModelQuerySet
 from django_ledger.models.bill import BillModel
+from django_ledger.models.utils import lazy_loader
 from django_ledger.views.mixins import DjangoLedgerSecurityMixIn
 
 
@@ -85,11 +86,12 @@ class BillModelCreateView(BillModelModelBaseView, CreateView):
             else:
                 return HttpResponseBadRequest()
 
+            po_itemtxs_related_name = lazy_loader.get_item_transaction_model_related_name('po_model')
             po_qs = PurchaseOrderModel.objects.for_entity(
                 entity_model=self.kwargs['entity_slug'],
-            ).prefetch_related('itemtransactionmodel_set')
+            ).prefetch_related(po_itemtxs_related_name)
             po_model: PurchaseOrderModel = get_object_or_404(po_qs, uuid__exact=po_pk)
-            po_itemtxs_qs = po_model.itemtransactionmodel_set.filter(
+            po_itemtxs_qs = getattr(po_model, po_itemtxs_related_name).filter(
                 bill_model__isnull=True,
                 uuid__in=po_item_uuids
             )
@@ -168,7 +170,8 @@ class BillModelCreateView(BillModelModelBaseView, CreateView):
                                      extra_tags='is-danger')
                 return self.render_to_response(self.get_context_data(form=form))
 
-            po_model_items_qs = po_model.itemtransactionmodel_set.filter(uuid__in=item_uuids)
+            po_itemtxs_related_name = lazy_loader.get_item_transaction_model_related_name('po_model')
+            po_model_items_qs = getattr(po_model, po_itemtxs_related_name).filter(uuid__in=item_uuids)
 
             if po_model.is_contract_bound():
                 bill_model.ce_model_id = po_model.ce_model_id
