@@ -31,7 +31,7 @@ from django_ledger.io.roles import (INCOME_OPERATIONAL, ASSET_CA_INVENTORY, COGS
                                     LIABILITY_CL_DEFERRED_REVENUE, EXPENSE_OPERATIONAL, EQUITY_CAPITAL,
                                     ASSET_CA_RECEIVABLES, LIABILITY_CL_ACC_PAYABLE)
 from django_ledger.models import (EntityModel, TransactionModel, VendorModel,
-                                  EntityUnitModel, UnitOfMeasureModel, ItemModel,
+                                  EntityUnitModel, ItemModel,
                                   BillModel, ItemTransactionModel, InvoiceModel,
                                   EstimateModel, LoggingMixIn, InvoiceModelValidationError, ChartOfAccountModel)
 from django_ledger.models.utils import lazy_loader
@@ -341,6 +341,7 @@ class EntityDataGenerator(LoggingMixIn):
         for uom in uom_models:
             uom.full_clean()
 
+        UnitOfMeasureModel = lazy_loader.get_uom_model()
         self.uom_models = UnitOfMeasureModel.objects.bulk_create(uom_models)
 
     def create_products(self):

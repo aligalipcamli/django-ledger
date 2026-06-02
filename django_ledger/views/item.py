@@ -21,7 +21,8 @@ from django_ledger.forms.item import (
     ExpenseItemCreateForm, ExpenseItemUpdateForm, InventoryItemCreateForm, InventoryItemUpdateForm,
     ServiceCreateForm, ServiceUpdateForm
 )
-from django_ledger.models import ItemModel, UnitOfMeasureModel, EntityModel, UnitOfMeasureModelQuerySet
+from django_ledger.models import ItemModel, EntityModel, UnitOfMeasureModelQuerySet
+from django_ledger.models.utils import lazy_loader
 from django_ledger.views.mixins import DjangoLedgerSecurityMixIn
 
 
@@ -34,7 +35,8 @@ class UnitOfMeasureModelModelBaseView(DjangoLedgerSecurityMixIn):
     def get_queryset(self):
         if self.queryset is None:
             entity_model: EntityModel = self.get_authorized_entity_instance()
-            self.queryset = entity_model.unitofmeasuremodel_set.all()
+            UnitOfMeasureModel = lazy_loader.get_uom_model()
+            self.queryset = UnitOfMeasureModel.objects.for_entity(entity_model)
         return self.queryset
 
 
@@ -72,7 +74,7 @@ class UnitOfMeasureModelCreateView(UnitOfMeasureModelModelBaseView, CreateView):
         )
 
     def form_valid(self, form):
-        instance: UnitOfMeasureModel = form.save(commit=False)
+        instance = form.save(commit=False)
         entity_slug = self.kwargs['entity_slug']
         try:
             entity_model: EntityModel = self.AUTHORIZED_ENTITY_MODEL
@@ -132,7 +134,7 @@ class UnitOfMeasureModelDeleteView(UnitOfMeasureModelModelBaseView, DeleteView):
             return super(UnitOfMeasureModelDeleteView, self).form_valid(form)
         except RestrictedError:
 
-            uom_model: UnitOfMeasureModel = self.object
+            uom_model = self.object
             add_message(self.request,
                         level=ERROR,
                         message=f'Unable to delete UOM {uom_model.name}. '

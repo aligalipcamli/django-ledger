@@ -59,7 +59,7 @@ from django_ledger.models.items import (
     ItemModel,
     ItemModelQuerySet,
     ItemTransactionModelQuerySet,
-    UnitOfMeasureModel,
+    UnitOfMeasureModelAbstract,
     UnitOfMeasureModelQuerySet,
 )
 from django_ledger.models.ledger import LedgerModel
@@ -2162,9 +2162,16 @@ class EntityModelAbstract(
         -------
         UnitOfMeasureModelQuerySet
         """
-        return self.unitofmeasuremodel_set.all().select_related('entity')
+        UnitOfMeasureModel = lazy_loader.get_uom_model()
+        return UnitOfMeasureModel.objects.for_entity(self).select_related('entity')
 
-    def create_uom(self, name: str, unit_abbr: str, active: bool = True, commit: bool = True) -> UnitOfMeasureModel:
+    def create_uom(
+            self,
+            name: str,
+            unit_abbr: str,
+            active: bool = True,
+            commit: bool = True
+    ) -> UnitOfMeasureModelAbstract:
         """
         Creates a new Unit of Measure Model associated with the EntityModel instance
 
@@ -2183,6 +2190,7 @@ class EntityModelAbstract(
         -------
         UnitOfMeasureModel
         """
+        UnitOfMeasureModel = lazy_loader.get_uom_model()
         uom_model = UnitOfMeasureModel(name=name, unit_abbr=unit_abbr, is_active=active, entity=self)
         uom_model.clean()
         uom_model.clean_fields()
@@ -2239,7 +2247,7 @@ class EntityModelAbstract(
         self,
         name: str,
         item_type: str,
-        uom_model: Union[UUID, UnitOfMeasureModel],
+        uom_model: Union[UUID, UnitOfMeasureModelAbstract],
         coa_model: Optional[Union[ChartOfAccountModel, UUID, str]] = None,
         commit: bool = True,
     ) -> ItemModel:
@@ -2263,8 +2271,9 @@ class EntityModelAbstract(
         ItemModel
             The created Product.
         """
+        UnitOfMeasureModel = lazy_loader.get_uom_model()
         if isinstance(uom_model, UUID):
-            uom_model = self.unitofmeasuremodel_set.select_related('entity').get(uuid__exact=uom_model)
+            uom_model = UnitOfMeasureModel.objects.for_entity(self).select_related('entity').get(uuid__exact=uom_model)
         elif isinstance(uom_model, UnitOfMeasureModel):
             if uom_model.entity_id != self.uuid:
                 raise EntityModelValidationError(f'Invalid UnitOfMeasureModel for entity {self.slug}...')
@@ -2318,7 +2327,7 @@ class EntityModelAbstract(
     def create_item_service(
         self,
         name: str,
-        uom_model: Union[UUID, UnitOfMeasureModel],
+        uom_model: Union[UUID, UnitOfMeasureModelAbstract],
         coa_model: Optional[Union[ChartOfAccountModel, UUID, str]] = None,
         commit: bool = True,
     ) -> ItemModel:
@@ -2342,8 +2351,9 @@ class EntityModelAbstract(
             The created Service.
         """
 
+        UnitOfMeasureModel = lazy_loader.get_uom_model()
         if isinstance(uom_model, UUID):
-            uom_model = self.unitofmeasuremodel_set.select_related('entity').get(uuid__exact=uom_model)
+            uom_model = UnitOfMeasureModel.objects.for_entity(self).select_related('entity').get(uuid__exact=uom_model)
         elif isinstance(uom_model, UnitOfMeasureModel):
             if uom_model.entity_id != self.uuid:
                 raise EntityModelValidationError(f'Invalid UnitOfMeasureModel for entity {self.slug}...')
@@ -2393,7 +2403,7 @@ class EntityModelAbstract(
         self,
         name: str,
         expense_type: str,
-        uom_model: Union[UUID, UnitOfMeasureModel],
+        uom_model: Union[UUID, UnitOfMeasureModelAbstract],
         expense_account: Optional[Union[UUID, AccountModel]] = None,
         coa_model: Optional[Union[ChartOfAccountModel, UUID, str]] = None,
         commit: bool = True,
@@ -2421,8 +2431,9 @@ class EntityModelAbstract(
         -------
         ItemModel
         """
+        UnitOfMeasureModel = lazy_loader.get_uom_model()
         if isinstance(uom_model, UUID):
-            uom_model = self.unitofmeasuremodel_set.select_related('entity').get(uuid__exact=uom_model)
+            uom_model = UnitOfMeasureModel.objects.for_entity(self).select_related('entity').get(uuid__exact=uom_model)
         elif isinstance(uom_model, UnitOfMeasureModel):
             if uom_model.entity_id != self.uuid:
                 raise EntityModelValidationError(f'Invalid UnitOfMeasureModel for entity {self.slug}...')
@@ -2492,7 +2503,7 @@ class EntityModelAbstract(
     def create_item_inventory(
         self,
         name: str,
-        uom_model: Union[UUID, UnitOfMeasureModel],
+        uom_model: Union[UUID, UnitOfMeasureModelAbstract],
         item_type: str,
         inventory_account: Optional[Union[UUID, AccountModel]] = None,
         coa_model: Optional[Union[ChartOfAccountModel, UUID, str]] = None,
@@ -2522,8 +2533,9 @@ class EntityModelAbstract(
         -------
         ItemModel
         """
+        UnitOfMeasureModel = lazy_loader.get_uom_model()
         if isinstance(uom_model, UUID):
-            uom_model = self.unitofmeasuremodel_set.select_related('entity').get(uuid__exact=uom_model)
+            uom_model = UnitOfMeasureModel.objects.for_entity(self).select_related('entity').get(uuid__exact=uom_model)
         elif isinstance(uom_model, UnitOfMeasureModel):
             if uom_model.entity_id != self.uuid:
                 raise EntityModelValidationError(f'Invalid UnitOfMeasureModel for entity {self.slug}...')

@@ -24,6 +24,7 @@ from string import ascii_lowercase, digits
 from typing import Dict
 from uuid import uuid4, UUID
 
+import swapper
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.validators import MinValueValidator
 from django.db import models, transaction, IntegrityError
@@ -583,7 +584,7 @@ class ItemModelAbstract(CreateUpdateMixIn):
     item_role = models.CharField(max_length=10, choices=ITEM_ROLE_CHOICES, null=True, blank=True)
     item_type = models.CharField(max_length=1, choices=ITEM_TYPE_CHOICES, null=True, blank=True)
 
-    uom = models.ForeignKey('django_ledger.UnitOfMeasureModel',
+    uom = models.ForeignKey(swapper.get_model_name('django_ledger', 'UnitOfMeasureModel'),
                             verbose_name=_('Unit of Measure'),
                             on_delete=models.RESTRICT)
 
@@ -1773,6 +1774,7 @@ class UnitOfMeasureModel(UnitOfMeasureModelAbstract):
 
     class Meta(UnitOfMeasureModelAbstract.Meta):
         abstract = False
+        swappable = swapper.swappable_setting('django_ledger', 'UnitOfMeasureModel')
 
 
 class ItemTransactionModel(ItemTransactionModelAbstract):
