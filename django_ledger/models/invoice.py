@@ -81,7 +81,7 @@ class InvoiceModelQuerySet(QuerySet):
         InvoiceModelQuerySet
             Returns a QuerySet of draft invoices only.
         """
-        return self.filter(invoice_status__exact=InvoiceModel.INVOICE_STATUS_DRAFT)
+        return self.filter(invoice_status__exact=self.model.INVOICE_STATUS_DRAFT)
 
     def in_review(self):
         """
@@ -93,7 +93,7 @@ class InvoiceModelQuerySet(QuerySet):
         InvoiceModelQuerySet
             Returns a QuerySet of in review invoices only.
         """
-        return self.filter(invoice_status__exact=InvoiceModel.INVOICE_STATUS_REVIEW)
+        return self.filter(invoice_status__exact=self.model.INVOICE_STATUS_REVIEW)
 
     def approved(self):
         """
@@ -104,7 +104,7 @@ class InvoiceModelQuerySet(QuerySet):
         InvoiceModelQuerySet
             Returns a QuerySet of approved invoices only.
         """
-        return self.filter(invoice_status__exact=InvoiceModel.INVOICE_STATUS_APPROVED)
+        return self.filter(invoice_status__exact=self.model.INVOICE_STATUS_APPROVED)
 
     def paid(self):
         """
@@ -115,7 +115,7 @@ class InvoiceModelQuerySet(QuerySet):
         InvoiceModelQuerySet
             Returns a QuerySet of paid invoices only.
         """
-        return self.filter(invoice_status__exact=InvoiceModel.INVOICE_STATUS_PAID)
+        return self.filter(invoice_status__exact=self.model.INVOICE_STATUS_PAID)
 
     def void(self):
         """
@@ -127,7 +127,7 @@ class InvoiceModelQuerySet(QuerySet):
         InvoiceModelQuerySet
             Returns a QuerySet of void invoices only.
         """
-        return self.filter(invoice_status__exact=InvoiceModel.INVOICE_STATUS_VOID)
+        return self.filter(invoice_status__exact=self.model.INVOICE_STATUS_VOID)
 
     def canceled(self):
         """
@@ -139,7 +139,7 @@ class InvoiceModelQuerySet(QuerySet):
         InvoiceModelQuerySet
             Returns a QuerySet of canceled invoices only.
         """
-        return self.filter(invoice_status__exact=InvoiceModel.INVOICE_STATUS_CANCELED)
+        return self.filter(invoice_status__exact=self.model.INVOICE_STATUS_CANCELED)
 
     def active(self):
         """
@@ -152,8 +152,8 @@ class InvoiceModelQuerySet(QuerySet):
             Returns a QuerySet of active invoices only.
         """
         return self.filter(
-            Q(invoice_status__exact=InvoiceModel.INVOICE_STATUS_APPROVED) |
-            Q(invoice_status__exact=InvoiceModel.INVOICE_STATUS_PAID)
+            Q(invoice_status__exact=self.model.INVOICE_STATUS_APPROVED) |
+            Q(invoice_status__exact=self.model.INVOICE_STATUS_PAID)
         )
 
     def overdue(self):
@@ -177,7 +177,7 @@ class InvoiceModelQuerySet(QuerySet):
         InvoiceModelQuerySet
             Returns a QuerySet of paid invoices only.
         """
-        return self.filter(invoice_status__exact=InvoiceModel.INVOICE_STATUS_APPROVED)
+        return self.filter(invoice_status__exact=self.model.INVOICE_STATUS_APPROVED)
 
     def for_user(self, user_model):
         if user_model.is_superuser:
@@ -1865,9 +1865,10 @@ class InvoiceModel(InvoiceModelAbstract):
 
     class Meta(InvoiceModelAbstract.Meta):
         abstract = False
+        swappable = swapper.swappable_setting('django_ledger', 'InvoiceModel')
 
 
-def invoicemodel_presave(instance: InvoiceModel, **kwargs):
+def invoicemodel_presave(instance, **kwargs):
     if instance.can_generate_invoice_number():
         instance.generate_invoice_number(commit=False)
 
@@ -1875,4 +1876,8 @@ def invoicemodel_presave(instance: InvoiceModel, **kwargs):
         instance.entity_model = instance.ledger.entity
 
 
-pre_save.connect(receiver=invoicemodel_presave, sender=InvoiceModel)
+pre_save.connect(
+    receiver=invoicemodel_presave,
+    sender=swapper.get_model_name('django_ledger', 'InvoiceModel'),
+    dispatch_uid='django_ledger.invoicemodel_presave',
+)

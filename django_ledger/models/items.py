@@ -1419,7 +1419,7 @@ class ItemTransactionModelAbstract(CreateUpdateMixIn):
                                    null=True,
                                    blank=True,
                                    verbose_name=_('Bill Model'))
-    invoice_model = models.ForeignKey('django_ledger.InvoiceModel',
+    invoice_model = models.ForeignKey(swapper.get_model_name('django_ledger', 'InvoiceModel'),
                                       on_delete=models.RESTRICT,
                                       null=True,
                                       blank=True,

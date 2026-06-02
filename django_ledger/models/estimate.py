@@ -1495,7 +1495,8 @@ class EstimateModelAbstract(CreateUpdateMixIn,
 
     def get_invoiced_amount(self, invoice_qs: Optional[InvoiceModelQuerySet] = None) -> dict:
         if not invoice_qs:
-            invoice_qs = self.invoicemodel_set.all().active()
+            InvoiceModel = lazy_loader.get_invoice_model()
+            invoice_qs = InvoiceModel.objects.filter(ce_model=self).active()
         else:
             invoice_qs = self.validate_invoice_queryset(invoice_qs=invoice_qs)
 

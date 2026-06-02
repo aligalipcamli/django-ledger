@@ -17,6 +17,7 @@ from django_ledger.forms.account import AccountModelUpdateForm, AccountModelCrea
 from django_ledger.io.io_core import get_localdate
 from django_ledger.models import EntityModel, ChartOfAccountModel
 from django_ledger.models.accounts import AccountModel
+from django_ledger.models.utils import lazy_loader
 from django_ledger.views.mixins import (
     YearlyReportMixIn, MonthlyReportMixIn, QuarterlyReportMixIn, DjangoLedgerSecurityMixIn,
     BaseDateNavigationUrlMixIn, EntityUnitMixIn, DateReportMixIn
@@ -200,13 +201,16 @@ class AccountModelYearDetailView(BaseAccountModelBaseView,
         account_model: AccountModel = context['object']
         context['header_title'] = f'Account {account_model.code} - {account_model.name}'
         context['page_title'] = f'Account {account_model.code} - {account_model.name}'
+        invoice_accessor = lazy_loader.get_invoice_model()._meta.get_field(
+            'ledger',
+        ).remote_field.get_accessor_name()
         txs_qs = account_model.transactionmodel_set.all().not_closing_entry().posted().order_by(
             'journal_entry__timestamp'
         ).select_related(
             'journal_entry',
             'journal_entry__entity_unit',
             'journal_entry__ledger__billmodel',
-            'journal_entry__ledger__invoicemodel',
+            f'journal_entry__ledger__{invoice_accessor}',
         )
         txs_qs = txs_qs.from_date(self.get_from_date())
         txs_qs = txs_qs.to_date(self.get_to_date())

@@ -23,8 +23,9 @@ from django.utils.dateparse import parse_date
 from django.utils.translation import gettext_lazy as _
 from django.views.generic.dates import YearMixin, MonthMixin, DayMixin
 
-from django_ledger.models import EntityModel, InvoiceModel, BillModel, LedgerModel
+from django_ledger.models import EntityModel, BillModel, LedgerModel
 from django_ledger.models.entity import EntityModelFiscalPeriodMixIn
+from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import DJANGO_LEDGER_AUTHORIZED_SUPERUSER
 
 
@@ -508,6 +509,7 @@ class UnpaidElementsMixIn:
             from_date = context['from_date'] if not from_date else from_date
             to_date = context['to_date'] if not to_date else to_date
 
+            InvoiceModel = lazy_loader.get_invoice_model()
             qs = (
                 InvoiceModel.objects.for_entity(entity_model=self.kwargs['entity_slug'])
                 .for_user(user_model=self.request.user)

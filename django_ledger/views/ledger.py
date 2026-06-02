@@ -27,6 +27,7 @@ from django_ledger.forms.ledger import LedgerModelCreateForm, LedgerModelUpdateF
 from django_ledger.io.io_core import get_localdate
 from django_ledger.models import EntityModel
 from django_ledger.models.ledger import LedgerModel
+from django_ledger.models.utils import lazy_loader
 from django_ledger.views.mixins import (
     BaseDateNavigationUrlMixIn,
     DateReportMixIn,
@@ -65,7 +66,10 @@ class LedgerModelListView(LedgerModelModelBaseView, ArchiveIndexView):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        qs = qs.select_related('billmodel', 'invoicemodel')
+        invoice_accessor = lazy_loader.get_invoice_model()._meta.get_field(
+            'ledger',
+        ).remote_field.get_accessor_name()
+        qs = qs.select_related('billmodel', invoice_accessor)
         qs = qs.order_by('-created')
 
         if self.show_all:

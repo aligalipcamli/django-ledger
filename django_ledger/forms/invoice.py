@@ -13,7 +13,8 @@ from django.forms.models import BaseModelFormSet
 from django.utils.translation import gettext_lazy as _
 
 from django_ledger.io.roles import ASSET_CA_CASH, ASSET_CA_RECEIVABLES, LIABILITY_CL_DEFERRED_REVENUE
-from django_ledger.models import AccountModel, InvoiceModel, ItemTransactionModel
+from django_ledger.models import AccountModel, ItemTransactionModel
+from django_ledger.models.invoice import InvoiceModelAbstract
 from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import DJANGO_LEDGER_FORM_INPUT_CLASSES
 
@@ -52,7 +53,7 @@ class InvoiceModelCreateForEstimateForm(ModelForm):
             self.fields['unearned_account'].queryset = account_qs.filter(role__exact=LIABILITY_CL_DEFERRED_REVENUE)
 
     class Meta:
-        model = InvoiceModel
+        model = lazy_loader.get_invoice_model()
         fields = [
             'terms',
             'cash_account',
@@ -106,10 +107,10 @@ class BaseInvoiceModelUpdateForm(ModelForm):
         super().__init__(*args, **kwargs)
         self.ENTITY_SLUG = entity_slug
         self.USER_MODEL = user_model
-        self.INVOICE_MODEL: InvoiceModel = self.instance
+        self.INVOICE_MODEL: InvoiceModelAbstract = self.instance
 
     class Meta:
-        model = InvoiceModel
+        model = lazy_loader.get_invoice_model()
         fields = [
             'markdown_notes'
         ]
@@ -233,7 +234,7 @@ class BaseInvoiceItemTransactionFormset(BaseModelFormSet):
                  **kwargs):
         super().__init__(*args, **kwargs)
         self.USER_MODEL = user_model
-        self.INVOICE_MODEL: InvoiceModel = invoice_model
+        self.INVOICE_MODEL: InvoiceModelAbstract = invoice_model
         self.ENTITY_SLUG = entity_slug
 
         ItemModel = lazy_loader.get_item_model()
@@ -267,7 +268,7 @@ class BaseInvoiceItemTransactionFormset(BaseModelFormSet):
         }
 
 
-def get_invoice_itemtxs_formset_class(invoice_model: InvoiceModel):
+def get_invoice_itemtxs_formset_class(invoice_model: InvoiceModelAbstract):
     can_delete = invoice_model.can_edit_items()
     return modelformset_factory(
         model=ItemTransactionModel,

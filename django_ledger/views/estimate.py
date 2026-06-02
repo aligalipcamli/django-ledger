@@ -20,6 +20,7 @@ from django_ledger.forms.estimate import (EstimateModelCreateForm, BaseEstimateM
                                           DraftEstimateModelUpdateForm)
 from django_ledger.models import EntityModel
 from django_ledger.models.estimate import EstimateModel
+from django_ledger.models.utils import lazy_loader
 from django_ledger.views import DjangoLedgerSecurityMixIn
 
 
@@ -105,9 +106,12 @@ class EstimateModelDetailView(DjangoLedgerSecurityMixIn, EstimateModelModelViewQ
         ) if ce_model.is_approved() else ce_model.purchaseordermodel_set.none()
         context['estimate_po_model_queryset'] = po_qs
 
-        invoice_qs = ce_model.invoicemodel_set.for_entity(
-            entity_model=self.kwargs['entity_slug']
-        ) if ce_model.is_approved() else ce_model.invoicemodel_set.none()
+        InvoiceModel = lazy_loader.get_invoice_model()
+        invoice_qs = (
+            InvoiceModel.objects.for_entity(entity_model=self.kwargs['entity_slug']).filter(ce_model=ce_model)
+            if ce_model.is_approved()
+            else InvoiceModel.objects.none()
+        )
         context['estimate_invoice_model_queryset'] = invoice_qs
 
         bill_qs = ce_model.billmodel_set.for_entity(

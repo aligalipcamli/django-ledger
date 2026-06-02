@@ -32,7 +32,7 @@ from django_ledger.io.roles import (INCOME_OPERATIONAL, ASSET_CA_INVENTORY, COGS
                                     ASSET_CA_RECEIVABLES, LIABILITY_CL_ACC_PAYABLE)
 from django_ledger.models import (EntityModel, TransactionModel, VendorModel,
                                   EntityUnitModel,
-                                  BillModel, ItemTransactionModel, InvoiceModel,
+                                  BillModel, ItemTransactionModel,
                                   EstimateModel, LoggingMixIn, InvoiceModelValidationError, ChartOfAccountModel)
 from django_ledger.models.utils import lazy_loader
 from django_ledger.utils import (generate_random_sku, generate_random_upc, generate_random_item_id)
@@ -693,6 +693,7 @@ class EntityDataGenerator(LoggingMixIn):
                                     self.update_inventory()
 
     def create_invoice(self, date_draft: date):
+        InvoiceModel = lazy_loader.get_invoice_model()
         invoice_model = self.entity_model.create_invoice(
             customer_model=choice(self.customer_models),
             terms=choice(InvoiceModel.TERM_CHOICES_VALID),

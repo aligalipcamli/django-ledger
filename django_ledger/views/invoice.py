@@ -23,7 +23,7 @@ from django_ledger.forms.invoice import (BaseInvoiceModelUpdateForm, InvoiceMode
                                          AccruedAndApprovedInvoiceModelUpdateForm, InvoiceModelCreateForm)
 from django_ledger.io.io_core import get_localdate
 from django_ledger.models import EntityModel, LedgerModel, EstimateModel
-from django_ledger.models.invoice import InvoiceModel
+from django_ledger.models.utils import lazy_loader
 from django_ledger.views.mixins import DjangoLedgerSecurityMixIn
 
 
@@ -32,6 +32,7 @@ class InvoiceModelModelViewQuerySetMixIn:
 
     def get_queryset(self):
         if self.queryset is None:
+            InvoiceModel = lazy_loader.get_invoice_model()
             self.queryset = InvoiceModel.objects.for_entity(
                 entity_model=self.kwargs['entity_slug']
             ).select_related('customer', 'ledger').order_by('-created')

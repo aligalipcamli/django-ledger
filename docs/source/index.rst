@@ -24,6 +24,7 @@ Created and developed by `Miguel Sanda <https://www.miguelsanda.com>`_.
    ./custom_bank_account_model
    ./custom_unit_of_measure_model
    ./custom_item_model
+   ./custom_invoice_model
 
 
 

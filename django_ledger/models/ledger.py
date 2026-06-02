@@ -368,9 +368,11 @@ class LedgerModelAbstract(CreateUpdateMixIn, IOMixIn):
 
     @property
     def get_wrapper_info(self):
+        bill_model = lazy_loader.get_bill_model()
+        invoice_model = lazy_loader.get_invoice_model()
         return {
-            lazy_loader.get_bill_model(): 'billmodel',
-            lazy_loader.get_invoice_model(): 'invoicemodel',
+            bill_model: bill_model._meta.get_field('ledger').remote_field.get_accessor_name(),
+            invoice_model: invoice_model._meta.get_field('ledger').remote_field.get_accessor_name(),
         }
 
     def get_wrapped_model_instance(self):

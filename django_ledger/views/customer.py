@@ -21,7 +21,6 @@ from django.views.generic import (
 from django_ledger.forms.customer import CustomerModelForm
 from django_ledger.models.customer import CustomerModelQueryset
 from django_ledger.models.entity import EntityModel
-from django_ledger.models.invoice import InvoiceModel
 from django_ledger.models.receipt import ReceiptModel
 from django_ledger.models.utils import lazy_loader
 from django_ledger.views.mixins import DjangoLedgerSecurityMixIn
@@ -124,6 +123,7 @@ class CustomerModelDetailView(CustomerModelModelViewQuerySetMixIn, DetailView):
             .for_customer(customer_model=customer)
             .order_by('-updated')
         )
+        InvoiceModel = lazy_loader.get_invoice_model()
         invoices_qs = (
             InvoiceModel.objects.for_entity(entity_model=self.AUTHORIZED_ENTITY_MODEL)
             .filter(customer=customer)
