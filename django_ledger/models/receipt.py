@@ -117,6 +117,7 @@ class ReceiptModelQuerySet(QuerySet):
         ReceiptModelValidationError
             If the provided value is not a supported type.
         """
+        VendorModel = lazy_loader.get_vendor_model()
         if isinstance(vendor_model, str):
             return self.filter(
                 vendor_model__vendor_number__iexact=vendor_model,
@@ -283,7 +284,7 @@ class ReceiptModelAbstract(CreateUpdateMixIn, MarkdownNotesMixIn, IOMixIn):
         blank=True,
     )
     vendor_model = models.ForeignKey(
-        'django_ledger.VendorModel',
+        swapper.get_model_name('django_ledger', 'VendorModel'),
         on_delete=models.PROTECT,
         verbose_name=_('Vendor Model'),
         null=True,
@@ -746,6 +747,7 @@ class ReceiptModelAbstract(CreateUpdateMixIn, MarkdownNotesMixIn, IOMixIn):
 
                 # get vendor model...
                 if vendor_model:
+                    VendorModel = lazy_loader.get_vendor_model()
                     if isinstance(vendor_model, str):
                         vendor_model = VendorModel.objects.for_entity(entity_model=entity_model).get(
                             vendor_number__iexact=vendor_model

@@ -1010,7 +1010,7 @@ class StagedTransactionModelAbstract(CreateUpdateMixIn):
         help_text=_('The receipt type of the transaction.'),
     )
     vendor_model = models.ForeignKey(
-        'django_ledger.VendorModel',
+        swapper.get_model_name('django_ledger', 'VendorModel'),
         on_delete=models.RESTRICT,
         null=True,
         blank=True,

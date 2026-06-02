@@ -15,7 +15,7 @@ from django_ledger.forms.vendor import VendorModelForm
 from django_ledger.models.bill import BillModel
 from django_ledger.models.entity import EntityModel
 from django_ledger.models.receipt import ReceiptModel
-from django_ledger.models.vendor import VendorModel
+from django_ledger.models.utils import lazy_loader
 from django_ledger.views.mixins import DjangoLedgerSecurityMixIn
 
 
@@ -24,6 +24,7 @@ class VendorModelModelBaseView(DjangoLedgerSecurityMixIn):
 
     def get_queryset(self):
         if self.queryset is None:
+            VendorModel = lazy_loader.get_vendor_model()
             self.queryset = VendorModel.objects.for_entity(
                 entity_model=self.kwargs['entity_slug']
             ).order_by('-updated')
@@ -65,7 +66,7 @@ class VendorModelCreateView(VendorModelModelBaseView, CreateView):
         )
 
     def form_valid(self, form):
-        vendor_model: VendorModel = form.save(commit=False)
+        vendor_model = form.save(commit=False)
         entity_model_qs = EntityModel.objects.for_user(user_model=self.request.user)
         entity_model = get_object_or_404(
             klass=entity_model_qs, slug__exact=self.kwargs['entity_slug']
@@ -85,7 +86,7 @@ class VendorModelUpdateView(VendorModelModelBaseView, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super(VendorModelUpdateView, self).get_context_data(**kwargs)
-        vendor_model: VendorModel = self.object
+        vendor_model = self.object
         context['page_title'] = self.PAGE_TITLE
         context['header_title'] = self.PAGE_TITLE
         context['header_subtitle'] = vendor_model.vendor_number
@@ -109,7 +110,7 @@ class VendorModelDetailView(VendorModelModelBaseView, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        vendor_model: VendorModel = self.object
+        vendor_model = self.object
         receipts_qs = (
             ReceiptModel.objects.for_entity(entity_model=self.AUTHORIZED_ENTITY_MODEL)
             .for_vendor(vendor_model=vendor_model)

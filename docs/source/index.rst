@@ -20,6 +20,7 @@ Created and developed by `Miguel Sanda <https://www.miguelsanda.com>`_.
    ./io
    ./models
    ./custom_customer_model
+   ./custom_vendor_model
 
 
 

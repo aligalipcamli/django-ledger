@@ -1586,7 +1586,8 @@ class EntityModelAbstract(
         VendorModelQuerySet
             The EntityModel instance VendorModelQuerySet with applied filters.
         """
-        vendor_qs = self.vendormodel_set.all().select_related('entity_model')
+        VendorModel = lazy_loader.get_vendor_model()
+        vendor_qs = VendorModel.objects.for_entity(self)
         if active:
             vendor_qs = vendor_qs.active()
         return vendor_qs
@@ -1614,6 +1615,7 @@ class EntityModelAbstract(
         -------
         VendorModel
         """
+        VendorModel = lazy_loader.get_vendor_model()
         vendor_model = VendorModel(entity_model=self, **vendor_model_kwargs)
         vendor_model.clean()
         if commit:
@@ -1748,6 +1750,7 @@ class EntityModelAbstract(
             The newly created BillModel in DRAFT state.
         """
         BillModel = lazy_loader.get_bill_model()
+        VendorModel = lazy_loader.get_vendor_model()
 
         if isinstance(vendor_model, VendorModel):
             if not vendor_model.entity_model_id == self.uuid:

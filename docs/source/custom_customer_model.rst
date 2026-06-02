@@ -94,7 +94,6 @@ This feature does not provide:
 
 * a generic data migration from built-in customers to a custom customer table,
 * safe late switching of ``DJANGO_LEDGER_CUSTOMERMODEL_MODEL`` after migrations,
-* swappable ``VendorModel`` support,
 * swappable item, bill, invoice, estimate, purchase order, or other commercial
   document models.
 

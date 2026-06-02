@@ -14,6 +14,7 @@ from decimal import Decimal
 from typing import Union, Optional, Tuple, Dict, List
 from uuid import uuid4, UUID
 
+import swapper
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.db import models, transaction, IntegrityError
@@ -371,7 +372,9 @@ class BillModelAbstract(
         null=True, blank=True, verbose_name=_('External Reference Number')
     )
     vendor = models.ForeignKey(
-        'django_ledger.VendorModel', on_delete=models.CASCADE, verbose_name=_('Vendor')
+        swapper.get_model_name('django_ledger', 'VendorModel'),
+        on_delete=models.CASCADE,
+        verbose_name=_('Vendor'),
     )
 
     cash_account = models.ForeignKey(

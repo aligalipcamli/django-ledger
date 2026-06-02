@@ -76,6 +76,15 @@ class ModelInfrastructureAPITest(SimpleTestCase):
         self.assertEqual(CustomerModel._meta.swappable, setting_name)
         self.assertIs(lazy_loader.get_customer_model(), CustomerModel)
 
+    def test_vendor_model_uses_swapper_default_setting(self):
+        setting_name = swapper.swappable_setting('django_ledger', 'VendorModel')
+
+        self.assertEqual(setting_name, 'DJANGO_LEDGER_VENDORMODEL_MODEL')
+        self.assertEqual(settings.DJANGO_LEDGER_VENDORMODEL_MODEL, 'django_ledger.VendorModel')
+        self.assertEqual(swapper.get_model_name('django_ledger', 'VendorModel'), 'django_ledger.VendorModel')
+        self.assertEqual(VendorModel._meta.swappable, setting_name)
+        self.assertIs(lazy_loader.get_vendor_model(), VendorModel)
+
     def test_lazy_loader_resolves_report_classes(self):
         report_cases = (
             (lazy_loader.get_balance_sheet_report_class, BalanceSheetReport),

@@ -159,7 +159,7 @@ class LazyLoader:
         return self.app_config.get_model(self.UOM_MODEL)
 
     def get_vendor_model(self):
-        return self.app_config.get_model(self.VENDOR_MODEL)
+        return swapper.load_model('django_ledger', 'VendorModel')
 
     def get_estimate_model(self):
         return self.app_config.get_model(self.ESTIMATE_MODEL)

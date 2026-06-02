@@ -6,7 +6,8 @@ from django.utils.translation import gettext_lazy as _
 
 from django_ledger.io.roles import ASSET_CA_CASH, ASSET_CA_PREPAID, LIABILITY_CL_ACC_PAYABLE
 from django_ledger.models import (ItemModel, AccountModel, BillModel, ItemTransactionModel,
-                                  VendorModel, EntityUnitModel, EntityModel)
+                                  EntityUnitModel, EntityModel)
+from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import DJANGO_LEDGER_FORM_INPUT_CLASSES
 
 
@@ -19,7 +20,8 @@ class BillModelCreateForm(ModelForm):
 
     def get_vendor_queryset(self):
         if 'vendor' in self.fields:
-            vendor_qs = self.ENTITY_MODEL.vendormodel_set.active()
+            VendorModel = lazy_loader.get_vendor_model()
+            vendor_qs = VendorModel.objects.for_entity(self.ENTITY_MODEL).active()
             self.fields['vendor'].queryset = vendor_qs
 
     def get_accounts_queryset(self):

@@ -138,7 +138,8 @@ class BaseStagedTransactionModelFormSet(BaseModelFormSet):
         self.unit_model_qs = entity_model.entityunitmodel_set.all()
         self.UNIT_MODEL_CHOICES = [(None, '----')] + [(u.uuid, u) for i, u in enumerate(self.unit_model_qs)]
 
-        self.VENDOR_MODEL_QS = entity_model.vendormodel_set.visible().order_by('vendor_name')
+        VendorModel = lazy_loader.get_vendor_model()
+        self.VENDOR_MODEL_QS = VendorModel.objects.for_entity(entity_model).visible().order_by('vendor_name')
         CustomerModel = lazy_loader.get_customer_model()
         self.CUSTOMER_MODEL_QS = CustomerModel.objects.for_entity(entity_model).visible().order_by('customer_name')
 
