@@ -188,6 +188,7 @@ class ItemTransactionSwappableSchemaAPITest(TestCase):
         )
         return {
             'entity_model': entity_model,
+            'customer_model': customer_model,
             'invoice_model': invoice_model,
             'bill_model': bill_model,
             'po_model': po_model,
@@ -279,6 +280,75 @@ class ItemTransactionSwappableSchemaAPITest(TestCase):
         self.assertEqual(item_tx.invoice_model_id, setup['invoice_model'].uuid)
         self.assertEqual(item_tx.item_model_id, setup['service_item'].uuid)
         self.assertEqual(item_tx.custom_marker, 'custom')
+
+    def test_schema_bill_itemization_uses_custom_item_transaction(self):
+        setup = self.create_accounting_setup(name='API Swappable Item Transaction Bill Entity')
+        bill_model = setup['bill_model']
+        expense_item = setup['expense_item']
+        itemtxs = {
+            expense_item.item_number: {
+                'quantity': Decimal('2.00'),
+                'unit_cost': Decimal('50.00'),
+                'total_amount': Decimal('100.00'),
+            }
+        }
+
+        itemtxs_batch = bill_model.migrate_itemtxs(
+            itemtxs=itemtxs,
+            operation=BillModel.ITEMIZE_REPLACE,
+            commit=True,
+        )
+        bill_model.refresh_from_db()
+        item_tx = self.CustomItemTransactionModel.objects.select_related('bill_model', 'item_model').get(
+            bill_model=bill_model,
+        )
+
+        self.assertIsNone(BillModel._meta.swappable)
+        self.assertEqual(len(itemtxs_batch), 1)
+        self.assertIsInstance(item_tx, self.CustomItemTransactionModel)
+        self.assertEqual(item_tx.bill_model_id, bill_model.uuid)
+        self.assertEqual(item_tx.item_model_id, expense_item.uuid)
+        self.assertEqual(item_tx.total_amount, Decimal('100.00'))
+        self.assertEqual(bill_model.amount_due, Decimal('100.00'))
+
+    def test_schema_estimate_itemization_uses_custom_item_transaction(self):
+        setup = self.create_accounting_setup(name='API Swappable Item Transaction Estimate Entity')
+        estimate_model = setup['entity_model'].create_estimate(
+            estimate_title='API Swappable Item Transaction Estimate',
+            contract_terms=EstimateModel.CONTRACT_TERMS_FIXED,
+            customer_model=setup['customer_model'],
+            date_draft=date(2026, 1, 15),
+            commit=True,
+        )
+        service_item = setup['service_item']
+        itemtxs = {
+            service_item.item_number: {
+                'quantity': Decimal('2.00'),
+                'unit_cost': Decimal('50.00'),
+                'unit_revenue': Decimal('75.00'),
+                'total_amount': Decimal('150.00'),
+            }
+        }
+
+        itemtxs_batch = estimate_model.migrate_itemtxs(
+            itemtxs=itemtxs,
+            operation=EstimateModel.ITEMIZE_REPLACE,
+            commit=True,
+        )
+        estimate_model.refresh_from_db()
+        item_tx = self.CustomItemTransactionModel.objects.select_related('ce_model', 'item_model').get(
+            ce_model=estimate_model,
+        )
+
+        self.assertIsNone(EstimateModel._meta.swappable)
+        self.assertEqual(len(itemtxs_batch), 1)
+        self.assertIsInstance(item_tx, self.CustomItemTransactionModel)
+        self.assertEqual(item_tx.ce_model_id, estimate_model.uuid)
+        self.assertEqual(item_tx.item_model_id, service_item.uuid)
+        self.assertEqual(item_tx.ce_cost_estimate, Decimal('100.00'))
+        self.assertEqual(item_tx.ce_revenue_estimate, Decimal('150.00'))
+        self.assertEqual(estimate_model.labor_estimate, Decimal('100.00'))
+        self.assertEqual(estimate_model.revenue_estimate, Decimal('150.00'))
 
     def test_schema_invoice_itemization_and_lifecycle_use_custom_item_transaction(self):
         setup = self.create_accounting_setup(name='API Swappable Item Transaction Invoice Entity')
