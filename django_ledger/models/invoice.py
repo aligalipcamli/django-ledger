@@ -36,7 +36,7 @@ from django_ledger.io import ASSET_CA_CASH, ASSET_CA_RECEIVABLES, LIABILITY_CL_D
 from django_ledger.io.io_core import get_localtime, get_localdate
 from django_ledger.models import (
     lazy_loader, ItemTransactionModelQuerySet,
-    ItemModelQuerySet, ItemModel, QuerySet, Manager
+    ItemModelQuerySet, QuerySet, Manager
 )
 from django_ledger.models.deprecations import deprecated_entity_slug_behavior
 from django_ledger.models.entity import EntityModel
@@ -361,7 +361,7 @@ class InvoiceModelAbstract(
                                        null=True,
                                        default=dict,
                                        verbose_name=_('Invoice Additional Info'))
-    invoice_items = models.ManyToManyField('django_ledger.ItemModel',
+    invoice_items = models.ManyToManyField(swapper.get_model_name('django_ledger', 'ItemModel'),
                                            through='django_ledger.ItemTransactionModel',
                                            through_fields=('invoice_model', 'item_model'),
                                            verbose_name=_('Invoice Items'))
@@ -512,6 +512,7 @@ class InvoiceModelAbstract(
         return itemtxs_batch
 
     def get_item_model_qs(self) -> ItemModelQuerySet:
+        ItemModel = lazy_loader.get_item_model()
         return ItemModel.objects.filter(
             entity_id__exact=self.ledger.entity_id
         ).invoices()

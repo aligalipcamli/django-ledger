@@ -56,7 +56,7 @@ from django_ledger.models.chart_of_accounts import (
 from django_ledger.models.coa_default import CHART_OF_ACCOUNTS_ROOT_MAP
 from django_ledger.models.customer import CustomerModel, CustomerModelQueryset
 from django_ledger.models.items import (
-    ItemModel,
+    ItemModelAbstract,
     ItemModelQuerySet,
     ItemTransactionModelQuerySet,
     UnitOfMeasureModelAbstract,
@@ -1800,7 +1800,8 @@ class EntityModelAbstract(
         return bill_model
 
     def get_items_for_bill(self) -> ItemModelQuerySet:
-        item_model_qs: ItemModelQuerySet = self.itemmodel_set.all()
+        ItemModel = lazy_loader.get_item_model()
+        item_model_qs: ItemModelQuerySet = ItemModel.objects.for_entity(self)
         return item_model_qs.select_related('uom', 'entity').bills()
 
     # ### INVOICE MANAGEMENT ####
@@ -2213,7 +2214,8 @@ class EntityModelAbstract(
         -------
         ItemModelQuerySet
         """
-        qs = self.itemmodel_set.all().select_related(
+        ItemModel = lazy_loader.get_item_model()
+        qs = ItemModel.objects.for_entity(self).select_related(
             'uom',
             'entity',
             'inventory_account',
@@ -2250,7 +2252,7 @@ class EntityModelAbstract(
         uom_model: Union[UUID, UnitOfMeasureModelAbstract],
         coa_model: Optional[Union[ChartOfAccountModel, UUID, str]] = None,
         commit: bool = True,
-    ) -> ItemModel:
+    ) -> ItemModelAbstract:
         """
         Creates a new items of type PRODUCT.
 
@@ -2271,6 +2273,7 @@ class EntityModelAbstract(
         ItemModel
             The created Product.
         """
+        ItemModel = lazy_loader.get_item_model()
         UnitOfMeasureModel = lazy_loader.get_uom_model()
         if isinstance(uom_model, UUID):
             uom_model = UnitOfMeasureModel.objects.for_entity(self).select_related('entity').get(uuid__exact=uom_model)
@@ -2330,7 +2333,7 @@ class EntityModelAbstract(
         uom_model: Union[UUID, UnitOfMeasureModelAbstract],
         coa_model: Optional[Union[ChartOfAccountModel, UUID, str]] = None,
         commit: bool = True,
-    ) -> ItemModel:
+    ) -> ItemModelAbstract:
         """
         Creates a new items of type SERVICE.
 
@@ -2351,6 +2354,7 @@ class EntityModelAbstract(
             The created Service.
         """
 
+        ItemModel = lazy_loader.get_item_model()
         UnitOfMeasureModel = lazy_loader.get_uom_model()
         if isinstance(uom_model, UUID):
             uom_model = UnitOfMeasureModel.objects.for_entity(self).select_related('entity').get(uuid__exact=uom_model)
@@ -2407,7 +2411,7 @@ class EntityModelAbstract(
         expense_account: Optional[Union[UUID, AccountModel]] = None,
         coa_model: Optional[Union[ChartOfAccountModel, UUID, str]] = None,
         commit: bool = True,
-    ) -> ItemModel:
+    ) -> ItemModelAbstract:
         """
         Creates a new items of type EXPENSE.
 
@@ -2431,6 +2435,7 @@ class EntityModelAbstract(
         -------
         ItemModel
         """
+        ItemModel = lazy_loader.get_item_model()
         UnitOfMeasureModel = lazy_loader.get_uom_model()
         if isinstance(uom_model, UUID):
             uom_model = UnitOfMeasureModel.objects.for_entity(self).select_related('entity').get(uuid__exact=uom_model)
@@ -2533,6 +2538,7 @@ class EntityModelAbstract(
         -------
         ItemModel
         """
+        ItemModel = lazy_loader.get_item_model()
         UnitOfMeasureModel = lazy_loader.get_uom_model()
         if isinstance(uom_model, UUID):
             uom_model = UnitOfMeasureModel.objects.for_entity(self).select_related('entity').get(uuid__exact=uom_model)
@@ -2699,6 +2705,7 @@ class EntityModelAbstract(
             updated_items.append(item_model)
 
         if commit:
+            ItemModel = lazy_loader.get_item_model()
             ItemModel.objects.bulk_update(
                 updated_items,
                 fields=['inventory_received', 'inventory_received_value', 'updated'],
@@ -2731,7 +2738,8 @@ class EntityModelAbstract(
 
         """
         if not item_qs:
-            recorded_qs = self.itemmodel_set.all().inventory_all()
+            ItemModel = lazy_loader.get_item_model()
+            recorded_qs = ItemModel.objects.for_entity(self).inventory_all()
         else:
             self.validate_item_qs(item_qs)
             recorded_qs = item_qs

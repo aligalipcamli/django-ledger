@@ -31,7 +31,7 @@ from django_ledger.io.roles import (INCOME_OPERATIONAL, ASSET_CA_INVENTORY, COGS
                                     LIABILITY_CL_DEFERRED_REVENUE, EXPENSE_OPERATIONAL, EQUITY_CAPITAL,
                                     ASSET_CA_RECEIVABLES, LIABILITY_CL_ACC_PAYABLE)
 from django_ledger.models import (EntityModel, TransactionModel, VendorModel,
-                                  EntityUnitModel, ItemModel,
+                                  EntityUnitModel,
                                   BillModel, ItemTransactionModel, InvoiceModel,
                                   EstimateModel, LoggingMixIn, InvoiceModelValidationError, ChartOfAccountModel)
 from django_ledger.models.utils import lazy_loader
@@ -346,6 +346,7 @@ class EntityDataGenerator(LoggingMixIn):
 
     def create_products(self):
         self.logger.info(f'Creating entity product items...')
+        ItemModel = lazy_loader.get_item_model()
         product_count = randint(self.PRODUCTS_MIN, self.PRODUCTS_MAX)
         product_models = list()
         for i in range(product_count):
@@ -374,6 +375,7 @@ class EntityDataGenerator(LoggingMixIn):
 
     def create_services(self):
         self.logger.info(f'Creating entity service items...')
+        ItemModel = lazy_loader.get_item_model()
         product_count = randint(self.PRODUCTS_MIN, self.PRODUCTS_MAX)
         service_item_models = list()
         for i in range(product_count):
@@ -400,6 +402,7 @@ class EntityDataGenerator(LoggingMixIn):
 
     def create_expenses(self):
         self.logger.info(f'Creating entity expense items...')
+        ItemModel = lazy_loader.get_item_model()
         expense_count = randint(self.PRODUCTS_MIN, self.PRODUCTS_MAX)
         expense_models = [
             ItemModel(
@@ -425,6 +428,7 @@ class EntityDataGenerator(LoggingMixIn):
 
     def create_inventories(self):
         self.logger.info(f'Creating entity inventory items...')
+        ItemModel = lazy_loader.get_item_model()
         inv_count = randint(self.PRODUCTS_MIN, self.PRODUCTS_MAX)
         inventory_models = [
             ItemModel(
@@ -704,7 +708,7 @@ class EntityDataGenerator(LoggingMixIn):
         invoice_items = list()
 
         for i in range(randint(1, 10)):
-            item_model: ItemModel = choice(self.product_models)
+            item_model = choice(self.product_models)
             quantity = Decimal.from_float(round(random() * randint(1, 2), 2))
             entity_unit = choice(self.entity_unit_models) if random() > .75 else None
             margin = Decimal(random() + 3.5)

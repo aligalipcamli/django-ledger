@@ -13,7 +13,7 @@ from django.forms.models import BaseModelFormSet
 from django.utils.translation import gettext_lazy as _
 
 from django_ledger.io.roles import ASSET_CA_CASH, ASSET_CA_RECEIVABLES, LIABILITY_CL_DEFERRED_REVENUE
-from django_ledger.models import (AccountModel, InvoiceModel, ItemTransactionModel, ItemModel)
+from django_ledger.models import AccountModel, InvoiceModel, ItemTransactionModel
 from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import DJANGO_LEDGER_FORM_INPUT_CLASSES
 
@@ -199,7 +199,7 @@ class InvoiceItemForm(ModelForm):
         cleaned_data = super(InvoiceItemForm, self).clean()
         quantity = cleaned_data['quantity']
         if self.instance.item_model_id:
-            item_model: ItemModel = self.instance.item_model
+            item_model = self.instance.item_model
             if item_model.for_inventory and quantity > item_model.inventory_received:
                 raise ValidationError(f'Cannot invoice more than {item_model.inventory_received} units available.')
         return cleaned_data
@@ -236,6 +236,7 @@ class BaseInvoiceItemTransactionFormset(BaseModelFormSet):
         self.INVOICE_MODEL: InvoiceModel = invoice_model
         self.ENTITY_SLUG = entity_slug
 
+        ItemModel = lazy_loader.get_item_model()
         items_qs = ItemModel.objects.for_invoice(
             entity_model=self.ENTITY_SLUG
         )

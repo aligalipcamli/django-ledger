@@ -5,7 +5,7 @@ from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
 
 from django_ledger.io.roles import ASSET_CA_CASH, ASSET_CA_PREPAID, LIABILITY_CL_ACC_PAYABLE
-from django_ledger.models import (ItemModel, AccountModel, BillModel, ItemTransactionModel,
+from django_ledger.models import (AccountModel, BillModel, ItemTransactionModel,
                                   EntityUnitModel, EntityModel)
 from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import DJANGO_LEDGER_FORM_INPUT_CLASSES
@@ -264,7 +264,8 @@ class BaseBillItemTransactionFormset(BaseModelFormSet):
             'bill_model'
         ).order_by('-total_amount')
 
-        self.items_qs = self.ENTITY_MODEL.itemmodel_set.bills()
+        ItemModel = lazy_loader.get_item_model()
+        self.items_qs = ItemModel.objects.for_entity(self.ENTITY_MODEL).bills()
         self.entity_unit_qs = self.ENTITY_MODEL.entityunitmodel_set.all()
 
         for form in self.forms:

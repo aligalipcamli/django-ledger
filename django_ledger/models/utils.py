@@ -138,7 +138,7 @@ class LazyLoader:
         return self.app_config.get_model(self.JE_MODEL)
 
     def get_item_model(self):
-        return self.app_config.get_model(self.ITEM_MODEL)
+        return swapper.load_model('django_ledger', 'ItemModel')
 
     def get_item_transaction_model(self):
         return self.app_config.get_model(self.ITEM_TRANSACTION_MODEL)

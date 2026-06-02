@@ -32,7 +32,7 @@ from django_ledger.io.io_core import get_localdate
 from django_ledger.models import BillModelQuerySet, InvoiceModelQuerySet, lazy_loader, deprecated_entity_slug_behavior
 from django_ledger.models.customer import CustomerModel
 from django_ledger.models.entity import EntityModel, EntityStateModel
-from django_ledger.models.items import ItemTransactionModelQuerySet, ItemTransactionModel, ItemModelQuerySet, ItemModel
+from django_ledger.models.items import ItemTransactionModelQuerySet, ItemTransactionModel, ItemModelQuerySet
 from django_ledger.models.mixins import CreateUpdateMixIn, MarkdownNotesMixIn, ItemizeMixIn
 from django_ledger.models.purchase_order import PurchaseOrderModelQuerySet
 from django_ledger.models.signals import (
@@ -1132,6 +1132,7 @@ class EstimateModelAbstract(CreateUpdateMixIn,
         return itemtxs_batch
 
     def get_item_model_qs(self) -> ItemModelQuerySet:
+        ItemModel = lazy_loader.get_item_model()
         return ItemModel.objects.filter(
             entity_id__exact=self.entity_id
         ).estimates()

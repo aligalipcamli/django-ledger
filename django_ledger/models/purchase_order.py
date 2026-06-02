@@ -18,6 +18,7 @@ from string import ascii_uppercase, digits
 from typing import Tuple, List, Union, Optional, Dict
 from uuid import uuid4, UUID
 
+import swapper
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.validators import MinLengthValidator
@@ -33,7 +34,7 @@ from django_ledger.io.io_core import get_localdate
 from django_ledger.models.bill import BillModel, BillModelQuerySet
 from django_ledger.models.deprecations import deprecated_entity_slug_behavior
 from django_ledger.models.entity import EntityModel
-from django_ledger.models.items import ItemTransactionModel, ItemTransactionModelQuerySet, ItemModelQuerySet, ItemModel
+from django_ledger.models.items import ItemTransactionModel, ItemTransactionModelQuerySet, ItemModelQuerySet
 from django_ledger.models.mixins import CreateUpdateMixIn, MarkdownNotesMixIn, ItemizeMixIn
 from django_ledger.models.signals import (
     po_status_draft,
@@ -245,7 +246,7 @@ class PurchaseOrderModelAbstract(CreateUpdateMixIn,
     date_fulfilled = models.DateField(blank=True, null=True, verbose_name=_('Fulfillment Date'))
     date_canceled = models.DateField(null=True, blank=True, verbose_name=_('Canceled Date'))
 
-    po_items = models.ManyToManyField('django_ledger.ItemModel',
+    po_items = models.ManyToManyField(swapper.get_model_name('django_ledger', 'ItemModel'),
                                       through='django_ledger.ItemTransactionModel',
                                       through_fields=('po_model', 'item_model'),
                                       verbose_name=_('Purchase Order Items'))
@@ -387,6 +388,7 @@ class PurchaseOrderModelAbstract(CreateUpdateMixIn,
         return itemtxs_batch
 
     def get_item_model_qs(self) -> ItemModelQuerySet:
+        ItemModel = lazy_loader.get_item_model()
         return ItemModel.objects.filter(
             entity_id__exact=self.entity_id
         ).purchase_orders()

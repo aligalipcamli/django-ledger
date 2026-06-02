@@ -10,7 +10,7 @@ from django import forms
 from django.forms import ModelForm, Select, TextInput, BaseModelFormSet, modelformset_factory, Textarea
 from django.utils.translation import gettext_lazy as _
 
-from django_ledger.models import ItemTransactionModel, ItemModel, EntityUnitModel
+from django_ledger.models import ItemTransactionModel, EntityUnitModel
 from django_ledger.models.estimate import EstimateModel
 from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import DJANGO_LEDGER_FORM_INPUT_CLASSES
@@ -116,6 +116,7 @@ class BaseEstimateItemModelFormset(BaseModelFormSet):
         self.ESTIMATE_MODEL = customer_job_model
         self.ENTITY_SLUG = entity_slug
 
+        ItemModel = lazy_loader.get_item_model()
         items_qs = ItemModel.objects.for_estimate(
             entity_model=self.ENTITY_SLUG
         )

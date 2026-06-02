@@ -211,7 +211,7 @@ class ItemModelQuerySet(QuerySet):
                     Q(is_product_or_service=True) &
                     Q(for_inventory=True)
             ) |
-            Q(item_role=ItemModel.ITEM_ROLE_PRODUCT)
+            Q(item_role=self.model.ITEM_ROLE_PRODUCT)
         )
 
     def services(self) -> 'ItemModelQuerySet':
@@ -228,7 +228,7 @@ class ItemModelQuerySet(QuerySet):
                     Q(is_product_or_service=True) &
                     Q(for_inventory=False)
             ) |
-            Q(item_role=ItemModel.ITEM_ROLE_SERVICE)
+            Q(item_role=self.model.ITEM_ROLE_SERVICE)
         )
 
     def expenses(self) -> 'ItemModelQuerySet':
@@ -244,7 +244,7 @@ class ItemModelQuerySet(QuerySet):
             (
                     Q(is_product_or_service=False) &
                     Q(for_inventory=False)
-            ) | Q(item_role=ItemModel.ITEM_ROLE_EXPENSE)
+            ) | Q(item_role=self.model.ITEM_ROLE_EXPENSE)
         )
 
     def inventory_wip(self) -> 'ItemModelQuerySet':
@@ -261,7 +261,7 @@ class ItemModelQuerySet(QuerySet):
             (
                     Q(is_product_or_service=False) &
                     Q(for_inventory=True)
-            ) | Q(item_role=ItemModel.ITEM_ROLE_INVENTORY)
+            ) | Q(item_role=self.model.ITEM_ROLE_INVENTORY)
         )
 
     def inventory_all(self) -> 'ItemModelQuerySet':
@@ -280,14 +280,14 @@ class ItemModelQuerySet(QuerySet):
                     (
                             Q(is_product_or_service=False) &
                             Q(for_inventory=True)
-                    ) | Q(item_role=ItemModel.ITEM_ROLE_INVENTORY)
+                    ) | Q(item_role=self.model.ITEM_ROLE_INVENTORY)
             ) |
             (
                     (
                             Q(is_product_or_service=True) &
                             Q(for_inventory=True)
                     ) |
-                    Q(item_role=ItemModel.ITEM_ROLE_PRODUCT)
+                    Q(item_role=self.model.ITEM_ROLE_PRODUCT)
 
             )
         )
@@ -1411,7 +1411,7 @@ class ItemTransactionModelAbstract(CreateUpdateMixIn):
                                     blank=True,
                                     null=True,
                                     verbose_name=_('Associated Entity Unit'))
-    item_model = models.ForeignKey('django_ledger.ItemModel',
+    item_model = models.ForeignKey(swapper.get_model_name('django_ledger', 'ItemModel'),
                                    on_delete=models.RESTRICT,
                                    verbose_name=_('Item Model'))
     bill_model = models.ForeignKey('django_ledger.BillModel',
@@ -1793,3 +1793,4 @@ class ItemModel(ItemModelAbstract):
 
     class Meta(ItemModelAbstract.Meta):
         abstract = False
+        swappable = swapper.swappable_setting('django_ledger', 'ItemModel')

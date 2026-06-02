@@ -31,7 +31,6 @@ from django_ledger.models.entity import EntityModel
 from django_ledger.models.items import (
     ItemTransactionModelQuerySet,
     ItemTransactionModel,
-    ItemModel,
     ItemModelQuerySet,
 )
 from django_ledger.models.mixins import (
@@ -406,7 +405,7 @@ class BillModelAbstract(
         blank=True, null=True, default=dict, verbose_name=_('Bill Additional Info')
     )
     bill_items = models.ManyToManyField(
-        'django_ledger.ItemModel',
+        swapper.get_model_name('django_ledger', 'ItemModel'),
         through='django_ledger.ItemTransactionModel',
         through_fields=('bill_model', 'item_model'),
         verbose_name=_('Bill Items'),
@@ -582,6 +581,7 @@ class BillModelAbstract(
         return itemtxs_batch
 
     def get_item_model_qs(self) -> ItemModelQuerySet:
+        ItemModel = lazy_loader.get_item_model()
         return ItemModel.objects.filter(entity_id__exact=self.ledger.entity_id).bills()
 
     def validate_itemtxs_qs(

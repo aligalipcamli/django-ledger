@@ -10,7 +10,8 @@ from django.forms import (ModelForm, DateInput, TextInput, Select, BaseModelForm
                           modelformset_factory, Textarea, BooleanField, ValidationError)
 from django.utils.translation import gettext_lazy as _
 
-from django_ledger.models import (ItemModel, PurchaseOrderModel, ItemTransactionModel, EntityUnitModel)
+from django_ledger.models import PurchaseOrderModel, ItemTransactionModel, EntityUnitModel
+from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import DJANGO_LEDGER_FORM_INPUT_CLASSES
 
 
@@ -154,6 +155,7 @@ class BasePurchaseOrderItemFormset(BaseModelFormSet):
         self.ENTITY_SLUG = entity_slug
         self.PO_MODEL = po_model
 
+        ItemModel = lazy_loader.get_item_model()
         items_qs = ItemModel.objects.for_po(
             entity_model=self.ENTITY_SLUG,
         )
