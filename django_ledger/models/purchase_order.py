@@ -1268,6 +1268,7 @@ class PurchaseOrderModel(PurchaseOrderModelAbstract):
 
     class Meta(PurchaseOrderModelAbstract.Meta):
         abstract = False
+        swappable = swapper.swappable_setting('django_ledger', 'PurchaseOrderModel')
 
 
 def purchaseordermodel_presave(instance: PurchaseOrderModel, **kwargs):
@@ -1275,4 +1276,8 @@ def purchaseordermodel_presave(instance: PurchaseOrderModel, **kwargs):
         instance.generate_po_number(commit=False)
 
 
-pre_save.connect(receiver=purchaseordermodel_presave, sender=PurchaseOrderModel)
+pre_save.connect(
+    receiver=purchaseordermodel_presave,
+    sender=swapper.get_model_name('django_ledger', 'PurchaseOrderModel'),
+    dispatch_uid='django_ledger.purchaseordermodel_presave',
+)

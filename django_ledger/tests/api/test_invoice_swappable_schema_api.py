@@ -158,10 +158,9 @@ class InvoiceSwappableSchemaAPITest(TestCase):
         self.assertIs(lazy_loader.get_bill_model(), BillModel)
         self.assertEqual(EstimateModel._meta.swappable, 'DJANGO_LEDGER_ESTIMATEMODEL_MODEL')
         self.assertIs(lazy_loader.get_estimate_model(), EstimateModel)
-
-        for model_class in (PurchaseOrderModel, ReceiptModel):
-            with self.subTest(model=model_class.__name__):
-                self.assertIsNone(model_class._meta.swappable)
+        self.assertEqual(PurchaseOrderModel._meta.swappable, 'DJANGO_LEDGER_PURCHASEORDERMODEL_MODEL')
+        self.assertIs(lazy_loader.get_purchase_order_model(), PurchaseOrderModel)
+        self.assertIsNone(ReceiptModel._meta.swappable)
 
     def test_schema_invoice_item_m2m_uses_fixed_item_transaction_through_model(self):
         field = self.CustomInvoiceModel._meta.get_field('invoice_items')

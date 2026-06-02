@@ -79,7 +79,9 @@ include:
 * Estimate numbering, entity assignment, itemization, and lifecycle transitions
   for the effective estimate model.
 
-``PurchaseOrderModel`` and ``ReceiptModel`` remain fixed Django Ledger models.
+``PurchaseOrderModel`` may also be a custom model when its own setting is
+configured before initial migrations. ``ReceiptModel`` remains a fixed Django
+Ledger model.
 ``InvoiceModel``, ``BillModel``, and ``ItemTransactionModel`` may be separately
 swappable when their own settings are configured before initial migrations.
 

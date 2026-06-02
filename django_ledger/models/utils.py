@@ -128,7 +128,7 @@ class LazyLoader:
         return self.app_config.get_model(self.STAGED_TRANSACTION_MODEL)
 
     def get_purchase_order_model(self):
-        return self.app_config.get_model(self.PURCHASE_ORDER_MODEL)
+        return swapper.load_model('django_ledger', 'PurchaseOrderModel')
 
     def get_ledger_model(self):
         self.get_entity_unit_model()

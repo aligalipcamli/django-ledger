@@ -31,7 +31,7 @@ from django_ledger.forms.bill import (
     PaidBillModelUpdateForm
 )
 from django_ledger.io.io_core import get_localdate
-from django_ledger.models import EntityModel, PurchaseOrderModel, EstimateModel, BillModelQuerySet
+from django_ledger.models import EntityModel, EstimateModel, BillModelQuerySet
 from django_ledger.models.bill import BillModel
 from django_ledger.models.utils import lazy_loader
 from django_ledger.views.mixins import DjangoLedgerSecurityMixIn
@@ -88,10 +88,11 @@ class BillModelCreateView(BillModelModelBaseView, CreateView):
                 return HttpResponseBadRequest()
 
             po_itemtxs_related_name = lazy_loader.get_item_transaction_model_related_name('po_model')
+            PurchaseOrderModel = lazy_loader.get_purchase_order_model()
             po_qs = PurchaseOrderModel.objects.for_entity(
                 entity_model=self.kwargs['entity_slug'],
             ).prefetch_related(po_itemtxs_related_name)
-            po_model: PurchaseOrderModel = get_object_or_404(po_qs, uuid__exact=po_pk)
+            po_model = get_object_or_404(po_qs, uuid__exact=po_pk)
             po_itemtxs_qs = getattr(po_model, po_itemtxs_related_name).filter(
                 bill_model__isnull=True,
                 uuid__in=po_item_uuids
@@ -159,10 +160,11 @@ class BillModelCreateView(BillModelModelBaseView, CreateView):
             if not item_uuids:
                 return HttpResponseBadRequest()
             item_uuids = item_uuids.split(',')
+            PurchaseOrderModel = lazy_loader.get_purchase_order_model()
             po_qs = PurchaseOrderModel.objects.for_entity(
                 entity_model=self.kwargs['entity_slug'],
             )
-            po_model: PurchaseOrderModel = get_object_or_404(po_qs, uuid__exact=po_pk)
+            po_model = get_object_or_404(po_qs, uuid__exact=po_pk)
 
             try:
                 bill_model.can_bind_po(po_model, raise_exception=True)

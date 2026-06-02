@@ -28,6 +28,7 @@ Created and developed by `Miguel Sanda <https://www.miguelsanda.com>`_.
    ./custom_bill_model
    ./custom_estimate_model
    ./custom_item_transaction_model
+   ./custom_purchase_order_model
 
 
 

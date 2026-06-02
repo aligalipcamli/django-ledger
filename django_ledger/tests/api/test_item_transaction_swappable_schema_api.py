@@ -232,7 +232,7 @@ class ItemTransactionSwappableSchemaAPITest(TestCase):
         fk_cases = (
             ('bill_model', BillModel),
             ('invoice_model', InvoiceModel),
-            ('po_model', PurchaseOrderModel),
+            ('po_model', lazy_loader.get_purchase_order_model()),
             ('ce_model', lazy_loader.get_estimate_model()),
             ('item_model', lazy_loader.get_item_model()),
         )
@@ -261,12 +261,11 @@ class ItemTransactionSwappableSchemaAPITest(TestCase):
         self.assertEqual(errors, [])
 
     def test_schema_commercial_documents_keep_expected_swappability_boundary(self):
-        for model_class in (PurchaseOrderModel, ReceiptModel):
-            with self.subTest(model=model_class.__name__):
-                self.assertIsNone(model_class._meta.swappable)
-
         self.assertEqual(BillModel._meta.swappable, 'DJANGO_LEDGER_BILLMODEL_MODEL')
         self.assertEqual(EstimateModel._meta.swappable, 'DJANGO_LEDGER_ESTIMATEMODEL_MODEL')
+        self.assertEqual(PurchaseOrderModel._meta.swappable, 'DJANGO_LEDGER_PURCHASEORDERMODEL_MODEL')
+        self.assertIs(lazy_loader.get_purchase_order_model(), PurchaseOrderModel)
+        self.assertIsNone(ReceiptModel._meta.swappable)
         self.assertIs(lazy_loader.get_estimate_model(), EstimateModel)
 
     def test_schema_custom_item_transaction_persists_document_assignment(self):

@@ -1443,7 +1443,7 @@ class ItemTransactionModelAbstract(CreateUpdateMixIn):
                                        validators=[MinValueValidator(limit_value=0.0)])
 
     # Purchase Order fields...
-    po_model = models.ForeignKey('django_ledger.PurchaseOrderModel',
+    po_model = models.ForeignKey(swapper.get_model_name('django_ledger', 'PurchaseOrderModel'),
                                  on_delete=models.RESTRICT,
                                  null=True,
                                  blank=True,

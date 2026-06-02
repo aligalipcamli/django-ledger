@@ -19,7 +19,7 @@ from django_ledger.forms.purchase_order import (PurchaseOrderModelCreateForm, Ba
                                                 DraftPurchaseOrderModelUpdateForm, ReviewPurchaseOrderModelUpdateForm,
                                                 ApprovedPurchaseOrderModelUpdateForm,
                                                 get_po_itemtxs_formset_class)
-from django_ledger.models import PurchaseOrderModel, EstimateModel
+from django_ledger.models import EstimateModel
 from django_ledger.models.utils import lazy_loader
 from django_ledger.views.mixins import DjangoLedgerSecurityMixIn
 
@@ -29,6 +29,7 @@ class PurchaseOrderModelModelViewQuerySetMixIn(DjangoLedgerSecurityMixIn):
 
     def get_queryset(self):
         if self.queryset is None:
+            PurchaseOrderModel = lazy_loader.get_purchase_order_model()
             self.queryset = PurchaseOrderModel.objects.for_entity(
                 entity_model=self.AUTHORIZED_ENTITY_MODEL,
             ).select_related('entity', 'ce_model')
@@ -129,7 +130,7 @@ class PurchaseOrderModelCreateView(PurchaseOrderModelModelViewQuerySetMixIn, Cre
         return form
 
     def form_valid(self, form):
-        po_model: PurchaseOrderModel = form.save(commit=False)
+        po_model = form.save(commit=False)
         po_model = po_model.configure(
             entity_slug=self.kwargs['entity_slug'],
             user_model=self.request.user
@@ -173,7 +174,7 @@ class PurchaseOrderModelUpdateView(PurchaseOrderModelModelViewQuerySetMixIn, Upd
 
     def get_context_data(self, itemtxs_formset=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        po_model: PurchaseOrderModel = self.object
+        po_model = self.object
         title = f'Purchase Order {po_model.po_number}'
         context['page_title'] = title
         context['header_title'] = title
@@ -223,7 +224,7 @@ class PurchaseOrderModelUpdateView(PurchaseOrderModelModelViewQuerySetMixIn, Upd
                 return HttpResponseForbidden()
 
             queryset = self.get_queryset()
-            po_model: PurchaseOrderModel = self.get_object(queryset=queryset)
+            po_model = self.get_object(queryset=queryset)
             self.object = po_model
             po_itemtxs_formset_class = get_po_itemtxs_formset_class(po_model)
             itemtxs_formset = po_itemtxs_formset_class(request.POST,
@@ -268,7 +269,7 @@ class PurchaseOrderModelUpdateView(PurchaseOrderModelModelViewQuerySetMixIn, Upd
         return super(PurchaseOrderModelUpdateView, self).post(request, **kwargs)
 
     def get_form(self, form_class=None):
-        po_model: PurchaseOrderModel = self.object
+        po_model = self.object
         if po_model.is_draft():
             return DraftPurchaseOrderModelUpdateForm(
                 entity_slug=self.kwargs['entity_slug'],
@@ -311,12 +312,12 @@ class PurchaseOrderModelUpdateView(PurchaseOrderModelModelViewQuerySetMixIn, Upd
                            'po_pk': po_pk
                        })
 
-    def get_po_itemtxs_qs(self, po_model: PurchaseOrderModel):
+    def get_po_itemtxs_qs(self, po_model):
         po_itemtxs_related_name = lazy_loader.get_item_transaction_model_related_name('po_model')
         return getattr(po_model, po_itemtxs_related_name).select_related('bill_model', 'po_model').order_by('created')
 
     def form_valid(self, form: BasePurchaseOrderModelUpdateForm):
-        po_model: PurchaseOrderModel = form.save(commit=False)
+        po_model = form.save(commit=False)
 
         if form.has_changed():
             ItemTransactionModel = lazy_loader.get_item_transaction_model()
@@ -370,12 +371,12 @@ class PurchaseOrderModelDetailView(PurchaseOrderModelModelViewQuerySetMixIn, Det
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(object_list=object_list, **kwargs)
-        po_model: PurchaseOrderModel = self.object
+        po_model = self.object
         title = f'Purchase Order {po_model.po_number}'
         context['page_title'] = title
         context['header_title'] = title
 
-        po_model: PurchaseOrderModel = self.object
+        po_model = self.object
         po_items_qs, item_data = po_model.get_itemtxs_data(
             queryset=po_model.get_itemtxs_related_manager().all().select_related('item_model', 'bill_model')
         )
@@ -398,7 +399,7 @@ class PurchaseOrderModelDeleteView(PurchaseOrderModelModelViewQuerySetMixIn, Del
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(object_list=object_list, **kwargs)
-        po_model: PurchaseOrderModel = self.object
+        po_model = self.object
         context['page_title'] = _('Delete Purchase Order ') + po_model.po_number
         context['header_title'] = context['page_title']
         return context
@@ -410,7 +411,7 @@ class PurchaseOrderModelDeleteView(PurchaseOrderModelModelViewQuerySetMixIn, Del
                        })
 
     def form_valid(self, request, *args, **kwargs):
-        po_model: PurchaseOrderModel = self.get_object()
+        po_model = self.get_object()
         self.object = po_model
         po_items_qs = po_model.get_itemtxs_related_manager().filter(bill_model__isnull=False)
         if po_items_qs.exists():
@@ -452,7 +453,7 @@ class BasePurchaseOrderActionActionView(
         if not self.action_name:
             raise ImproperlyConfigured('View attribute action_name is required.')
         response = super(BasePurchaseOrderActionActionView, self).get(request, *args, **kwargs)
-        po_model: PurchaseOrderModel = self.get_object()
+        po_model = self.get_object()
 
         try:
             getattr(po_model, self.action_name)(commit=self.commit, **kwargs)

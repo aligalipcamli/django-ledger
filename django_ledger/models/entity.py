@@ -1921,7 +1921,8 @@ class EntityModelAbstract(
         -------
         PurchaseOrderModelQuerySet
         """
-        return self.purchaseordermodel_set.all().select_related('entity')
+        PurchaseOrderModel = lazy_loader.get_purchase_order_model()
+        return PurchaseOrderModel.objects.for_entity(self).select_related('entity')
 
     def create_purchase_order(
         self,
