@@ -106,7 +106,7 @@ class BillModelQuerySet(QuerySet):
         BillModelQuerySet
             Returns a QuerySet of draft bills only.
         """
-        return self.filter(bill_status__exact=BillModel.BILL_STATUS_DRAFT)
+        return self.filter(bill_status__exact=self.model.BILL_STATUS_DRAFT)
 
     def in_review(self):
         """
@@ -118,7 +118,7 @@ class BillModelQuerySet(QuerySet):
         BillModelQuerySet
             Returns a QuerySet of bills in review only.
         """
-        return self.filter(bill_status__exact=BillModel.BILL_STATUS_REVIEW)
+        return self.filter(bill_status__exact=self.model.BILL_STATUS_REVIEW)
 
     def approved(self):
         """
@@ -129,7 +129,7 @@ class BillModelQuerySet(QuerySet):
         BillModelQuerySet
             Returns a QuerySet of approved bills only.
         """
-        return self.filter(bill_status__exact=BillModel.BILL_STATUS_APPROVED)
+        return self.filter(bill_status__exact=self.model.BILL_STATUS_APPROVED)
 
     def paid(self):
         """
@@ -140,7 +140,7 @@ class BillModelQuerySet(QuerySet):
         BillModelQuerySet
             Returns a QuerySet of paid bills only.
         """
-        return self.filter(bill_status__exact=BillModel.BILL_STATUS_PAID)
+        return self.filter(bill_status__exact=self.model.BILL_STATUS_PAID)
 
     def void(self):
         """
@@ -152,7 +152,7 @@ class BillModelQuerySet(QuerySet):
         BillModelQuerySet
             Returns a QuerySet of void bills only.
         """
-        return self.filter(bill_status__exact=BillModel.BILL_STATUS_VOID)
+        return self.filter(bill_status__exact=self.model.BILL_STATUS_VOID)
 
     def canceled(self):
         """
@@ -164,7 +164,7 @@ class BillModelQuerySet(QuerySet):
         BillModelQuerySet
             Returns a QuerySet of canceled bills only.
         """
-        return self.filter(bill_status__exact=BillModel.BILL_STATUS_CANCELED)
+        return self.filter(bill_status__exact=self.model.BILL_STATUS_CANCELED)
 
     def active(self):
         """
@@ -177,8 +177,8 @@ class BillModelQuerySet(QuerySet):
             Returns a QuerySet of active bills only.
         """
         return self.filter(
-            Q(bill_status__exact=BillModel.BILL_STATUS_APPROVED)
-            | Q(bill_status__exact=BillModel.BILL_STATUS_PAID)
+            Q(bill_status__exact=self.model.BILL_STATUS_APPROVED)
+            | Q(bill_status__exact=self.model.BILL_STATUS_PAID)
         )
 
     def overdue(self):
@@ -202,7 +202,7 @@ class BillModelQuerySet(QuerySet):
         BillModelQuerySet
             Returns a QuerySet of paid bills only.
         """
-        return self.filter(bill_status__exact=BillModel.BILL_STATUS_APPROVED)
+        return self.filter(bill_status__exact=self.model.BILL_STATUS_APPROVED)
 
 
 class BillModelManager(Manager):
@@ -1991,6 +1991,7 @@ class BillModel(BillModelAbstract):
 
     class Meta(BillModelAbstract.Meta):
         abstract = False
+        swappable = swapper.swappable_setting('django_ledger', 'BillModel')
 
 
 def billmodel_presave(instance: BillModel, **kwargs):
@@ -2001,4 +2002,8 @@ def billmodel_presave(instance: BillModel, **kwargs):
         instance.entity_model = instance.ledger.entity
 
 
-pre_save.connect(receiver=billmodel_presave, sender=BillModel)
+pre_save.connect(
+    receiver=billmodel_presave,
+    sender=swapper.get_model_name('django_ledger', 'BillModel'),
+    dispatch_uid='django_ledger.billmodel_presave',
+)

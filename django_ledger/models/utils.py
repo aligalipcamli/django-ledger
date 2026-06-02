@@ -158,7 +158,7 @@ class LazyLoader:
         return swapper.load_model('django_ledger', 'CustomerModel')
 
     def get_bill_model(self):
-        return self.app_config.get_model(self.BILL_MODEL)
+        return swapper.load_model('django_ledger', 'BillModel')
 
     def get_invoice_model(self):
         return swapper.load_model('django_ledger', 'InvoiceModel')

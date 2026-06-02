@@ -32,7 +32,6 @@ from django_ledger.io.roles import (INCOME_OPERATIONAL, ASSET_CA_INVENTORY, COGS
                                     ASSET_CA_RECEIVABLES, LIABILITY_CL_ACC_PAYABLE)
 from django_ledger.models import (EntityModel, TransactionModel, VendorModel,
                                   EntityUnitModel,
-                                  BillModel,
                                   LoggingMixIn, InvoiceModelValidationError, ChartOfAccountModel)
 from django_ledger.models.utils import lazy_loader
 from django_ledger.utils import (generate_random_sku, generate_random_upc, generate_random_item_id)
@@ -518,6 +517,7 @@ class EntityDataGenerator(LoggingMixIn):
                 estimate_model.mark_as_canceled(commit=True, date_canceled=date_canceled)
 
     def create_bill(self, date_draft: date):
+        BillModel = lazy_loader.get_bill_model()
         ItemTransactionModel = lazy_loader.get_item_transaction_model()
         bill_model = self.entity_model.create_bill(
             vendor_model=choice(self.vendor_models),
@@ -584,6 +584,7 @@ class EntityDataGenerator(LoggingMixIn):
                 bill_model.mark_as_canceled(date_canceled=canceled_date)
 
     def create_po(self, date_draft: date):
+        BillModel = lazy_loader.get_bill_model()
         ItemTransactionModel = lazy_loader.get_item_transaction_model()
 
         po_model = self.entity_model.create_purchase_order(date_draft=date_draft)

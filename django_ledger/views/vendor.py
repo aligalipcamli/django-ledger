@@ -12,7 +12,6 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
 from django_ledger.forms.vendor import VendorModelForm
-from django_ledger.models.bill import BillModel
 from django_ledger.models.entity import EntityModel
 from django_ledger.models.receipt import ReceiptModel
 from django_ledger.models.utils import lazy_loader
@@ -118,7 +117,7 @@ class VendorModelDetailView(VendorModelModelBaseView, DetailView):
         )
 
         bills_qs = (
-            BillModel.objects.for_entity(entity_model=self.AUTHORIZED_ENTITY_MODEL)
+            lazy_loader.get_bill_model().objects.for_entity(entity_model=self.AUTHORIZED_ENTITY_MODEL)
             .filter(vendor=vendor_model)
             .order_by('-updated')
         )

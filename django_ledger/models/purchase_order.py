@@ -31,7 +31,7 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
 from django_ledger.io.io_core import get_localdate
-from django_ledger.models.bill import BillModel, BillModelQuerySet
+from django_ledger.models.bill import BillModelQuerySet
 from django_ledger.models.deprecations import deprecated_entity_slug_behavior
 from django_ledger.models.entity import EntityModel
 from django_ledger.models.items import ItemTransactionModel, ItemTransactionModelQuerySet, ItemModelQuerySet
@@ -1162,6 +1162,7 @@ class PurchaseOrderModelAbstract(CreateUpdateMixIn,
         BillModelQuerySet
         """
         itemtxs_related_query_name = lazy_loader.get_item_transaction_model_related_query_name('bill_model')
+        BillModel = lazy_loader.get_bill_model()
         return BillModel.objects.filter(**{f'{itemtxs_related_query_name}__po_model__uuid__exact': self.uuid})
 
     def get_status_action_date(self):

@@ -5,7 +5,8 @@ from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
 
 from django_ledger.io.roles import ASSET_CA_CASH, ASSET_CA_PREPAID, LIABILITY_CL_ACC_PAYABLE
-from django_ledger.models import AccountModel, BillModel, EntityUnitModel, EntityModel
+from django_ledger.models import AccountModel, EntityUnitModel, EntityModel
+from django_ledger.models.bill import BillModelAbstract
 from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import DJANGO_LEDGER_FORM_INPUT_CLASSES
 
@@ -36,7 +37,7 @@ class BillModelCreateForm(ModelForm):
             self.fields['unearned_account'].queryset = account_qs.filter(role__exact=LIABILITY_CL_ACC_PAYABLE)
 
     class Meta:
-        model = BillModel
+        model = lazy_loader.get_bill_model()
         fields = [
             'vendor',
             'xref',
@@ -102,7 +103,7 @@ class BaseBillModelUpdateForm(BillModelCreateForm):
         super().__init__(entity_model=entity_model, *args, **kwargs)
         self.ENTITY_MODEL = entity_model
         self.USER_MODEL = user_model
-        self.BILL_MODEL: BillModel = self.instance
+        self.BILL_MODEL: BillModelAbstract = self.instance
 
     def save(self, commit=True):
         if commit:
@@ -115,7 +116,7 @@ class BaseBillModelUpdateForm(BillModelCreateForm):
         super().save(commit=commit)
 
     class Meta:
-        model = BillModel
+        model = lazy_loader.get_bill_model()
         fields = [
             'markdown_notes'
         ]
@@ -252,7 +253,7 @@ class BaseBillItemTransactionFormset(BaseModelFormSet):
 
     def __init__(self, *args,
                  entity_model: EntityModel,
-                 bill_model: BillModel,
+                 bill_model: BillModelAbstract,
                  **kwargs):
         super().__init__(*args, **kwargs)
         self.BILL_MODEL = bill_model
@@ -284,7 +285,7 @@ class BaseBillItemTransactionFormset(BaseModelFormSet):
                 form.fields['entity_unit'].disabled = True
 
 
-def get_bill_itemtxs_formset_class(bill_model: BillModel):
+def get_bill_itemtxs_formset_class(bill_model: BillModelAbstract):
     BillItemTransactionFormset = modelformset_factory(
         model=lazy_loader.get_item_transaction_model(),
         form=BillItemTransactionForm,

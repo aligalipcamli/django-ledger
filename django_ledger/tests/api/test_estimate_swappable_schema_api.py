@@ -280,11 +280,12 @@ class EstimateSwappableSchemaAPITest(TestCase):
 
         self.assertEqual(errors, [])
 
-    def test_schema_commercial_documents_remain_fixed_except_invoice_existing_swappability(self):
-        for model_class in (BillModel, PurchaseOrderModel, ReceiptModel):
+    def test_schema_commercial_documents_keep_expected_swappability_boundary(self):
+        for model_class in (PurchaseOrderModel, ReceiptModel):
             with self.subTest(model=model_class.__name__):
                 self.assertIsNone(model_class._meta.swappable)
 
+        self.assertEqual(BillModel._meta.swappable, 'DJANGO_LEDGER_BILLMODEL_MODEL')
         self.assertEqual(InvoiceModel._meta.swappable, 'DJANGO_LEDGER_INVOICEMODEL_MODEL')
         self.assertEqual(ItemTransactionModel._meta.swappable, 'DJANGO_LEDGER_ITEMTRANSACTIONMODEL_MODEL')
 

@@ -24,6 +24,7 @@ from django_ledger.io import ROLES_ORDER_ALL
 from django_ledger.io.io_core import get_localdate, validate_activity
 from django_ledger.models import BillModel, InvoiceModel, JournalEntryModel, ImportJobModelQuerySet, ImportJobModel, \
     VendorModelQuerySet, CustomerModelQueryset
+from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import (
     DJANGO_LEDGER_CURRENCY_SYMBOL,
     DJANGO_LEDGER_FINANCIAL_ANALYSIS,
@@ -236,6 +237,7 @@ def jes_table(context, journal_entry_qs, next_url=None):
 
 @register.inclusion_tag('django_ledger/transactions/tags/txs_table.html')
 def transactions_table(object_type: Union[JournalEntryModel, BillModel, InvoiceModel], style='detail'):
+    BillModel = lazy_loader.get_bill_model()
     if isinstance(object_type, JournalEntryModel):
         transaction_model_qs = object_type.transactionmodel_set.all().with_annotated_details().order_by('-timestamp')
     elif isinstance(object_type, BillModel):
