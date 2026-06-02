@@ -251,7 +251,7 @@ class PurchaseOrderModelAbstract(CreateUpdateMixIn,
                                       through_fields=('po_model', 'item_model'),
                                       verbose_name=_('Purchase Order Items'))
 
-    ce_model = models.ForeignKey('django_ledger.EstimateModel',
+    ce_model = models.ForeignKey(swapper.get_model_name('django_ledger', 'EstimateModel'),
                                  on_delete=models.RESTRICT,
                                  null=True,
                                  blank=True,

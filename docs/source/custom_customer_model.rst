@@ -94,7 +94,7 @@ This feature does not provide:
 
 * a generic data migration from built-in customers to a custom customer table,
 * safe late switching of ``DJANGO_LEDGER_CUSTOMERMODEL_MODEL`` after migrations,
-* swappable item, bill, invoice, estimate, purchase order, or other commercial
+* swappable bills, purchase orders, receipts, or other fixed commercial
   document models.
 
 A future system check could warn when a project appears to configure a custom

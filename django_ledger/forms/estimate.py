@@ -31,7 +31,7 @@ class EstimateModelCreateForm(forms.ModelForm):
         ).active()
 
     class Meta:
-        model = EstimateModel
+        model = lazy_loader.get_estimate_model()
         fields = ['title', 'customer', 'terms']
         widgets = {
             'customer': forms.Select(attrs={
@@ -59,7 +59,7 @@ class BaseEstimateModelUpdateForm(forms.ModelForm):
         self.CUSTOMER_ESTIMATE_MODEL: EstimateModel = self.instance
 
     class Meta:
-        model = EstimateModel
+        model = lazy_loader.get_estimate_model()
         fields = [
             'markdown_notes'
         ]

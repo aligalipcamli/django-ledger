@@ -101,14 +101,14 @@ Combining Custom Models
 -----------------------
 
 ``ItemTransactionModel`` support can be combined with custom
-``UnitOfMeasureModel``, ``ItemModel``, and ``InvoiceModel`` settings when all
-settings are configured before initial migrations. The custom item transaction
-model should keep foreign keys aligned with the effective item and invoice
-models by inheriting from ``ItemTransactionModelAbstract`` or by using equivalent
-Swapper-aware relationships.
+``UnitOfMeasureModel``, ``ItemModel``, ``InvoiceModel``, and ``EstimateModel``
+settings when all settings are configured before initial migrations. The custom
+item transaction model should keep foreign keys aligned with the effective item,
+invoice, and estimate models by inheriting from ``ItemTransactionModelAbstract``
+or by using equivalent Swapper-aware relationships.
 
-Bill, estimate, purchase order, and receipt models remain fixed Django Ledger
-models in this support slice.
+Bill, purchase order, and receipt models remain fixed Django Ledger models in
+this support slice.
 
 Lemuur Line Items
 -----------------
@@ -136,11 +136,11 @@ This feature does not provide:
 * a generic data migration from built-in line items to a custom line-item table,
 * safe late switching of ``DJANGO_LEDGER_ITEMTRANSACTIONMODEL_MODEL`` after
   migrations,
-* swappable bills, estimates, purchase orders, receipts, accounts, entities,
-  ledgers, journal entries, or other core ledger models,
+* swappable bills, purchase orders, receipts, accounts, entities, ledgers,
+  journal entries, or other core ledger models,
 * built-in tax, discount, withholding, or e-document calculation.
 
 ``ItemTransactionModel`` support is independent from ``CustomerModel``,
 ``VendorModel``, ``BankAccountModel``, ``UnitOfMeasureModel``, ``ItemModel``,
-and ``InvoiceModel`` support. Configure each custom model explicitly before
-initial migrations.
+``InvoiceModel``, and ``EstimateModel`` support. Configure each custom model
+explicitly before initial migrations.

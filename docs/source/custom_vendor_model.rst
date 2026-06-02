@@ -94,9 +94,10 @@ This feature does not provide:
 
 * a generic data migration from built-in vendors to a custom vendor table,
 * safe late switching of ``DJANGO_LEDGER_VENDORMODEL_MODEL`` after migrations,
-* swappable item, bill, invoice, estimate, purchase order, receipt, import job,
-  staged transaction, or other commercial document models.
+* swappable bills, purchase orders, receipts, import jobs, staged transactions,
+  or other fixed commercial document models.
 
-``VendorModel`` support is independent from ``CustomerModel`` support. Enabling
-a custom vendor model does not make all commercial or domain-facing Django
-Ledger models swappable.
+``VendorModel`` support is independent from ``CustomerModel``,
+``BankAccountModel``, ``UnitOfMeasureModel``, ``ItemModel``, ``InvoiceModel``,
+``EstimateModel``, and ``ItemTransactionModel`` support. Configure each custom
+model explicitly before initial migrations.

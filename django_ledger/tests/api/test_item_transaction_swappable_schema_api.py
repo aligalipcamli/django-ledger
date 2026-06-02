@@ -233,7 +233,7 @@ class ItemTransactionSwappableSchemaAPITest(TestCase):
             ('bill_model', BillModel),
             ('invoice_model', InvoiceModel),
             ('po_model', PurchaseOrderModel),
-            ('ce_model', EstimateModel),
+            ('ce_model', lazy_loader.get_estimate_model()),
             ('item_model', lazy_loader.get_item_model()),
         )
 
@@ -260,10 +260,13 @@ class ItemTransactionSwappableSchemaAPITest(TestCase):
 
         self.assertEqual(errors, [])
 
-    def test_schema_commercial_documents_except_invoice_remain_fixed(self):
-        for model_class in (BillModel, EstimateModel, PurchaseOrderModel, ReceiptModel):
+    def test_schema_commercial_documents_except_swappable_invoice_and_estimate_remain_fixed(self):
+        for model_class in (BillModel, PurchaseOrderModel, ReceiptModel):
             with self.subTest(model=model_class.__name__):
                 self.assertIsNone(model_class._meta.swappable)
+
+        self.assertEqual(EstimateModel._meta.swappable, 'DJANGO_LEDGER_ESTIMATEMODEL_MODEL')
+        self.assertIs(lazy_loader.get_estimate_model(), EstimateModel)
 
     def test_schema_custom_item_transaction_persists_document_assignment(self):
         setup = self.create_accounting_setup()
@@ -340,7 +343,7 @@ class ItemTransactionSwappableSchemaAPITest(TestCase):
             ce_model=estimate_model,
         )
 
-        self.assertIsNone(EstimateModel._meta.swappable)
+        self.assertEqual(EstimateModel._meta.swappable, 'DJANGO_LEDGER_ESTIMATEMODEL_MODEL')
         self.assertEqual(len(itemtxs_batch), 1)
         self.assertIsInstance(item_tx, self.CustomItemTransactionModel)
         self.assertEqual(item_tx.ce_model_id, estimate_model.uuid)

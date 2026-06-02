@@ -1969,7 +1969,8 @@ class EntityModelAbstract(
         -------
         EstimateModelQuerySet
         """
-        return self.estimatemodel_set.all().select_related('entity')
+        EstimateModel = lazy_loader.get_estimate_model()
+        return EstimateModel.objects.for_entity(self).select_related('entity')
 
     def create_estimate(
         self,

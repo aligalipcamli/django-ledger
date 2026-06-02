@@ -170,7 +170,7 @@ class LazyLoader:
         return swapper.load_model('django_ledger', 'VendorModel')
 
     def get_estimate_model(self):
-        return self.app_config.get_model(self.ESTIMATE_MODEL)
+        return swapper.load_model('django_ledger', 'EstimateModel')
 
     def get_closing_entry_model(self):
         return self.app_config.get_model(self.CLOSING_ENTRY_MODEL)

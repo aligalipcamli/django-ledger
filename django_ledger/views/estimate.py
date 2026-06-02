@@ -30,7 +30,10 @@ class EstimateModelModelViewQuerySetMixIn:
     def get_queryset(self):
         if self.queryset is None:
             entity_model: EntityModel = getattr(self, 'AUTHORIZED_ENTITY_MODEL')
-            self.queryset = entity_model.estimatemodel_set.select_related('customer', 'entity')
+            EstimateModel = lazy_loader.get_estimate_model()
+            self.queryset = EstimateModel.objects.for_entity(
+                entity_model
+            ).select_related('customer', 'entity')
         return super().get_queryset()
 
 
@@ -101,9 +104,14 @@ class EstimateModelDetailView(DjangoLedgerSecurityMixIn, EstimateModelModelViewQ
         context['estimate_item_list'] = ce_model.get_itemtxs_related_manager().all()
 
         # PO Model Queryset...
-        po_qs = ce_model.purchaseordermodel_set.for_entity(
-            entity_model=self.kwargs['entity_slug']
-        ) if ce_model.is_approved() else ce_model.purchaseordermodel_set.none()
+        PurchaseOrderModel = lazy_loader.get_purchase_order_model()
+        po_qs = (
+            PurchaseOrderModel.objects.for_entity(
+                entity_model=self.kwargs['entity_slug']
+            ).filter(ce_model=ce_model)
+            if ce_model.is_approved()
+            else PurchaseOrderModel.objects.none()
+        )
         context['estimate_po_model_queryset'] = po_qs
 
         InvoiceModel = lazy_loader.get_invoice_model()
@@ -114,9 +122,14 @@ class EstimateModelDetailView(DjangoLedgerSecurityMixIn, EstimateModelModelViewQ
         )
         context['estimate_invoice_model_queryset'] = invoice_qs
 
-        bill_qs = ce_model.billmodel_set.for_entity(
-            entity_model=self.kwargs['entity_slug']
-        ) if ce_model.is_approved() else ce_model.billmodel_set.none()
+        BillModel = lazy_loader.get_bill_model()
+        bill_qs = (
+            BillModel.objects.for_entity(
+                entity_model=self.kwargs['entity_slug']
+            ).filter(ce_model=ce_model)
+            if ce_model.is_approved()
+            else BillModel.objects.none()
+        )
         context['estimate_bill_model_queryset'] = bill_qs
 
         if ce_model.is_contract():

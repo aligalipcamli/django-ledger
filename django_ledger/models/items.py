@@ -1473,7 +1473,7 @@ class ItemTransactionModelAbstract(CreateUpdateMixIn):
                                       verbose_name=_('PO Item Status'))
 
     # Estimate/Contract fields...
-    ce_model = models.ForeignKey('django_ledger.EstimateModel',
+    ce_model = models.ForeignKey(swapper.get_model_name('django_ledger', 'EstimateModel'),
                                  null=True,
                                  blank=True,
                                  verbose_name=_('Customer Estimate'),

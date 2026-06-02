@@ -87,6 +87,7 @@ class PurchaseOrderModelCreateView(PurchaseOrderModelModelViewQuerySetMixIn, Cre
     def get(self, request, entity_slug, **kwargs):
         response = super(PurchaseOrderModelCreateView, self).get(request, entity_slug, **kwargs)
         if self.for_estimate and 'ce_pk' in self.kwargs:
+            EstimateModel = lazy_loader.get_estimate_model()
             estimate_qs = EstimateModel.objects.for_entity(
                 entity_model=self.AUTHORIZED_ENTITY_MODEL,
             )
@@ -104,6 +105,7 @@ class PurchaseOrderModelCreateView(PurchaseOrderModelModelViewQuerySetMixIn, Cre
                                                      'entity_slug': self.kwargs['entity_slug'],
                                                      'ce_pk': self.kwargs['ce_pk']
                                                  })
+            EstimateModel = lazy_loader.get_estimate_model()
             estimate_qs = EstimateModel.objects.for_entity(
                 entity_model=self.AUTHORIZED_ENTITY_MODEL
             ).select_related('customer')
@@ -134,6 +136,7 @@ class PurchaseOrderModelCreateView(PurchaseOrderModelModelViewQuerySetMixIn, Cre
         )
 
         if self.for_estimate:
+            EstimateModel = lazy_loader.get_estimate_model()
             ce_pk = self.kwargs['ce_pk']
             estimate_model_qs = EstimateModel.objects.for_entity(
                 entity_model=self.AUTHORIZED_ENTITY_MODEL,

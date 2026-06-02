@@ -1475,7 +1475,8 @@ class EstimateModelAbstract(CreateUpdateMixIn,
 
     def get_po_amount(self, po_qs: PurchaseOrderModelQuerySet = None) -> dict:
         if not po_qs:
-            po_qs = self.purchaseordermodel_set.all().active()
+            PurchaseOrderModel = lazy_loader.get_purchase_order_model()
+            po_qs = PurchaseOrderModel.objects.filter(ce_model=self).active()
         else:
             po_qs = self.validate_po_queryset(po_qs=po_qs)
 
@@ -1483,7 +1484,8 @@ class EstimateModelAbstract(CreateUpdateMixIn,
 
     def get_billed_amount(self, bill_qs: Optional[BillModelQuerySet] = None) -> dict:
         if not bill_qs:
-            bill_qs = self.billmodel_set.all().active()
+            BillModel = lazy_loader.get_bill_model()
+            bill_qs = BillModel.objects.filter(ce_model=self).active()
         else:
             bill_qs = self.validate_bill_queryset(bill_qs=bill_qs)
 
@@ -1657,3 +1659,4 @@ class EstimateModel(EstimateModelAbstract):
 
     class Meta(EstimateModelAbstract.Meta):
         abstract = False
+        swappable = swapper.swappable_setting('django_ledger', 'EstimateModel')

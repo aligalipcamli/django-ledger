@@ -64,6 +64,7 @@ class BillModelCreateView(BillModelModelBaseView, CreateView):
             return HttpResponseForbidden()
 
         if self.for_estimate and 'ce_pk' in self.kwargs:
+            EstimateModel = lazy_loader.get_estimate_model()
             estimate_qs = EstimateModel.objects.for_entity(
                 entity_model=self.AUTHORIZED_ENTITY_MODEL,
             )
@@ -103,6 +104,7 @@ class BillModelCreateView(BillModelModelBaseView, CreateView):
                                       'po_pk': po_model.uuid
                                   }) + f'?item_uuids={po_item_uuids_qry_param}'
         elif self.for_estimate:
+            EstimateModel = lazy_loader.get_estimate_model()
             estimate_qs = EstimateModel.objects.for_entity(
                 entity_model=self.AUTHORIZED_ENTITY_MODEL
             )
@@ -142,6 +144,7 @@ class BillModelCreateView(BillModelModelBaseView, CreateView):
         )
 
         if self.for_estimate:
+            EstimateModel = lazy_loader.get_estimate_model()
             ce_pk = self.kwargs['ce_pk']
             estimate_model_qs = EstimateModel.objects.for_entity(
                 entity_model=self.kwargs['entity_slug']

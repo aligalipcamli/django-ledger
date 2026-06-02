@@ -78,6 +78,7 @@ class InvoiceModelCreateView(DjangoLedgerSecurityMixIn, InvoiceModelModelViewQue
             return HttpResponseForbidden()
 
         if self.for_estimate and 'ce_pk' in self.kwargs:
+            EstimateModel = lazy_loader.get_estimate_model()
             estimate_qs = EstimateModel.objects.for_entity(
                 entity_slug=entity_slug,
                 user_model=self.request.user
@@ -96,6 +97,7 @@ class InvoiceModelCreateView(DjangoLedgerSecurityMixIn, InvoiceModelModelViewQue
                                                      'entity_slug': self.kwargs['entity_slug'],
                                                      'ce_pk': self.kwargs['ce_pk']
                                                  })
+            EstimateModel = lazy_loader.get_estimate_model()
             estimate_qs = EstimateModel.objects.for_entity(
                 entity_model=self.AUTHORIZED_ENTITY_MODEL,
             ).select_related('customer')
@@ -135,6 +137,7 @@ class InvoiceModelCreateView(DjangoLedgerSecurityMixIn, InvoiceModelModelViewQue
         )
 
         if self.for_estimate:
+            EstimateModel = lazy_loader.get_estimate_model()
             ce_pk = self.kwargs['ce_pk']
             estimate_model_qs = EstimateModel.objects.for_entity(
                 entity_model=self.AUTHORIZED_ENTITY_MODEL,

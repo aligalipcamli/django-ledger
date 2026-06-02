@@ -412,7 +412,7 @@ class BillModelAbstract(
     )
 
     ce_model = models.ForeignKey(
-        'django_ledger.EstimateModel',
+        swapper.get_model_name('django_ledger', 'EstimateModel'),
         on_delete=models.RESTRICT,
         null=True,
         blank=True,

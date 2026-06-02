@@ -33,7 +33,7 @@ from django_ledger.io.roles import (INCOME_OPERATIONAL, ASSET_CA_INVENTORY, COGS
 from django_ledger.models import (EntityModel, TransactionModel, VendorModel,
                                   EntityUnitModel,
                                   BillModel,
-                                  EstimateModel, LoggingMixIn, InvoiceModelValidationError, ChartOfAccountModel)
+                                  LoggingMixIn, InvoiceModelValidationError, ChartOfAccountModel)
 from django_ledger.models.utils import lazy_loader
 from django_ledger.utils import (generate_random_sku, generate_random_upc, generate_random_item_id)
 
@@ -470,6 +470,7 @@ class EntityDataGenerator(LoggingMixIn):
         self.expense_models = self.entity_model.get_items_expenses()
 
     def create_estimate(self, date_draft: date):
+        EstimateModel = lazy_loader.get_estimate_model()
         ItemTransactionModel = lazy_loader.get_item_transaction_model()
         estimate_model = self.entity_model.create_estimate(
             estimate_title=f'Customer Estimate {date_draft}',
