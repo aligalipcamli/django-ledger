@@ -20,6 +20,7 @@ from django_ledger.forms.estimate import (EstimateModelCreateForm, BaseEstimateM
                                           DraftEstimateModelUpdateForm)
 from django_ledger.models import EntityModel
 from django_ledger.models.estimate import EstimateModel
+from django_ledger.models.utils import lazy_loader
 from django_ledger.views import DjangoLedgerSecurityMixIn
 
 
@@ -29,7 +30,10 @@ class EstimateModelModelViewQuerySetMixIn:
     def get_queryset(self):
         if self.queryset is None:
             entity_model: EntityModel = getattr(self, 'AUTHORIZED_ENTITY_MODEL')
-            self.queryset = entity_model.estimatemodel_set.select_related('customer', 'entity')
+            EstimateModel = lazy_loader.get_estimate_model()
+            self.queryset = EstimateModel.objects.for_entity(
+                entity_model
+            ).select_related('customer', 'entity')
         return super().get_queryset()
 
 
@@ -97,22 +101,35 @@ class EstimateModelDetailView(DjangoLedgerSecurityMixIn, EstimateModelModelViewQ
         context['header_title'] = self.PAGE_TITLE
         context['header_subtitle'] = ce_model.estimate_number
         context['header_subtitle_icon'] = 'eos-icons:job'
-        context['estimate_item_list'] = ce_model.itemtransactionmodel_set.all()
+        context['estimate_item_list'] = ce_model.get_itemtxs_related_manager().all()
 
         # PO Model Queryset...
-        po_qs = ce_model.purchaseordermodel_set.for_entity(
-            entity_model=self.kwargs['entity_slug']
-        ) if ce_model.is_approved() else ce_model.purchaseordermodel_set.none()
+        PurchaseOrderModel = lazy_loader.get_purchase_order_model()
+        po_qs = (
+            PurchaseOrderModel.objects.for_entity(
+                entity_model=self.kwargs['entity_slug']
+            ).filter(ce_model=ce_model)
+            if ce_model.is_approved()
+            else PurchaseOrderModel.objects.none()
+        )
         context['estimate_po_model_queryset'] = po_qs
 
-        invoice_qs = ce_model.invoicemodel_set.for_entity(
-            entity_model=self.kwargs['entity_slug']
-        ) if ce_model.is_approved() else ce_model.invoicemodel_set.none()
+        InvoiceModel = lazy_loader.get_invoice_model()
+        invoice_qs = (
+            InvoiceModel.objects.for_entity(entity_model=self.kwargs['entity_slug']).filter(ce_model=ce_model)
+            if ce_model.is_approved()
+            else InvoiceModel.objects.none()
+        )
         context['estimate_invoice_model_queryset'] = invoice_qs
 
-        bill_qs = ce_model.billmodel_set.for_entity(
-            entity_model=self.kwargs['entity_slug']
-        ) if ce_model.is_approved() else ce_model.billmodel_set.none()
+        BillModel = lazy_loader.get_bill_model()
+        bill_qs = (
+            BillModel.objects.for_entity(
+                entity_model=self.kwargs['entity_slug']
+            ).filter(ce_model=ce_model)
+            if ce_model.is_approved()
+            else BillModel.objects.none()
+        )
         context['estimate_bill_model_queryset'] = bill_qs
 
         if ce_model.is_contract():
@@ -126,7 +143,8 @@ class EstimateModelDetailView(DjangoLedgerSecurityMixIn, EstimateModelModelViewQ
 
     def get_queryset(self):
         qs = super().get_queryset()
-        return qs.prefetch_related('itemtransactionmodel_set')
+        estimate_itemtxs_related_name = lazy_loader.get_item_transaction_model_related_name('ce_model')
+        return qs.prefetch_related(estimate_itemtxs_related_name)
 
 
 class EstimateModelUpdateView(DjangoLedgerSecurityMixIn, EstimateModelModelViewQuerySetMixIn, UpdateView):

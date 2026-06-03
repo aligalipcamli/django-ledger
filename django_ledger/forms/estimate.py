@@ -10,8 +10,9 @@ from django import forms
 from django.forms import ModelForm, Select, TextInput, BaseModelFormSet, modelformset_factory, Textarea
 from django.utils.translation import gettext_lazy as _
 
-from django_ledger.models import CustomerModel, ItemTransactionModel, ItemModel, EntityUnitModel
+from django_ledger.models import EntityUnitModel
 from django_ledger.models.estimate import EstimateModel
+from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import DJANGO_LEDGER_FORM_INPUT_CLASSES
 
 
@@ -24,12 +25,13 @@ class EstimateModelCreateForm(forms.ModelForm):
         self.fields['customer'].queryset = self.get_customer_queryset()
 
     def get_customer_queryset(self):
+        CustomerModel = lazy_loader.get_customer_model()
         return CustomerModel.objects.for_entity(
             entity_model=self.ENTITY_SLUG,
         ).active()
 
     class Meta:
-        model = EstimateModel
+        model = lazy_loader.get_estimate_model()
         fields = ['title', 'customer', 'terms']
         widgets = {
             'customer': forms.Select(attrs={
@@ -57,7 +59,7 @@ class BaseEstimateModelUpdateForm(forms.ModelForm):
         self.CUSTOMER_ESTIMATE_MODEL: EstimateModel = self.instance
 
     class Meta:
-        model = EstimateModel
+        model = lazy_loader.get_estimate_model()
         fields = [
             'markdown_notes'
         ]
@@ -79,7 +81,7 @@ class DraftEstimateModelUpdateForm(BaseEstimateModelUpdateForm):
 
 class EstimateItemModelForm(ModelForm):
     class Meta:
-        model = ItemTransactionModel
+        model = lazy_loader.get_item_transaction_model()
         fields = [
             'item_model',
             'entity_unit',
@@ -114,6 +116,7 @@ class BaseEstimateItemModelFormset(BaseModelFormSet):
         self.ESTIMATE_MODEL = customer_job_model
         self.ENTITY_SLUG = entity_slug
 
+        ItemModel = lazy_loader.get_item_model()
         items_qs = ItemModel.objects.for_estimate(
             entity_model=self.ENTITY_SLUG
         )
@@ -135,7 +138,7 @@ class BaseEstimateItemModelFormset(BaseModelFormSet):
 
 
 CanEditEstimateItemModelFormset = modelformset_factory(
-    model=ItemTransactionModel,
+    model=lazy_loader.get_item_transaction_model(),
     form=EstimateItemModelForm,
     formset=BaseEstimateItemModelFormset,
     can_delete=True,
@@ -143,7 +146,7 @@ CanEditEstimateItemModelFormset = modelformset_factory(
 )
 
 ReadOnlyEstimateItemModelFormset = modelformset_factory(
-    model=ItemTransactionModel,
+    model=lazy_loader.get_item_transaction_model(),
     form=EstimateItemModelForm,
     formset=BaseEstimateItemModelFormset,
     can_delete=False,

@@ -23,6 +23,7 @@ from decimal import Decimal
 from typing import Literal, Optional
 from uuid import UUID, uuid4
 
+import swapper
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.validators import MinValueValidator
 from django.db import IntegrityError, models, transaction
@@ -43,6 +44,7 @@ from django_ledger.models import (
     MarkdownNotesMixIn,
     VendorModel,
 )
+from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import (
     DJANGO_LEDGER_DOCUMENT_NUMBER_PADDING,
     DJANGO_LEDGER_RECEIPT_NUMBER_PREFIX,
@@ -115,6 +117,7 @@ class ReceiptModelQuerySet(QuerySet):
         ReceiptModelValidationError
             If the provided value is not a supported type.
         """
+        VendorModel = lazy_loader.get_vendor_model()
         if isinstance(vendor_model, str):
             return self.filter(
                 vendor_model__vendor_number__iexact=vendor_model,
@@ -153,6 +156,7 @@ class ReceiptModelQuerySet(QuerySet):
         ReceiptModelValidationError
             If the provided value is not a supported type.
         """
+        CustomerModel = lazy_loader.get_customer_model()
         if isinstance(customer_model, str):
             return self.filter(
                 customer_model__customer_number__iexact=customer_model,
@@ -273,14 +277,14 @@ class ReceiptModelAbstract(CreateUpdateMixIn, MarkdownNotesMixIn, IOMixIn):
     )
 
     customer_model = models.ForeignKey(
-        'django_ledger.CustomerModel',
+        swapper.get_model_name('django_ledger', 'CustomerModel'),
         on_delete=models.PROTECT,
         verbose_name=_('Customer Model'),
         null=True,
         blank=True,
     )
     vendor_model = models.ForeignKey(
-        'django_ledger.VendorModel',
+        swapper.get_model_name('django_ledger', 'VendorModel'),
         on_delete=models.PROTECT,
         verbose_name=_('Vendor Model'),
         null=True,
@@ -315,6 +319,8 @@ class ReceiptModelAbstract(CreateUpdateMixIn, MarkdownNotesMixIn, IOMixIn):
     staged_transaction_model = models.OneToOneField(
         'django_ledger.StagedTransactionModel',
         on_delete=models.RESTRICT,
+        related_name='receiptmodel',
+        related_query_name='receiptmodel',
         null=True,
         blank=True,
         verbose_name=_('Staged Transaction Model'),
@@ -743,6 +749,7 @@ class ReceiptModelAbstract(CreateUpdateMixIn, MarkdownNotesMixIn, IOMixIn):
 
                 # get vendor model...
                 if vendor_model:
+                    VendorModel = lazy_loader.get_vendor_model()
                     if isinstance(vendor_model, str):
                         vendor_model = VendorModel.objects.for_entity(entity_model=entity_model).get(
                             vendor_number__iexact=vendor_model
@@ -761,6 +768,7 @@ class ReceiptModelAbstract(CreateUpdateMixIn, MarkdownNotesMixIn, IOMixIn):
 
                 # get customer model
                 if customer_model:
+                    CustomerModel = lazy_loader.get_customer_model()
                     if isinstance(customer_model, str):
                         customer_model = CustomerModel.objects.for_entity(entity_model=entity_model).get(
                             customer_number__iexact=customer_model
@@ -1032,6 +1040,7 @@ class ReceiptModel(ReceiptModelAbstract):
 
     class Meta:
         abstract = False
+        swappable = swapper.swappable_setting('django_ledger', 'ReceiptModel')
 
 
 def receiptmodel_presave(instance: ReceiptModel, **kwargs):
@@ -1051,4 +1060,8 @@ def receiptmodel_presave(instance: ReceiptModel, **kwargs):
     pass
 
 
-pre_save.connect(receiptmodel_presave, sender=ReceiptModel)
+pre_save.connect(
+    receiver=receiptmodel_presave,
+    sender=swapper.get_model_name('django_ledger', 'ReceiptModel'),
+    dispatch_uid='django_ledger.receiptmodel_presave',
+)

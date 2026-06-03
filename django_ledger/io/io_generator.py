@@ -30,10 +30,10 @@ from django_ledger.io.io_core import get_localtime, get_localdate
 from django_ledger.io.roles import (INCOME_OPERATIONAL, ASSET_CA_INVENTORY, COGS, ASSET_CA_CASH, ASSET_CA_PREPAID,
                                     LIABILITY_CL_DEFERRED_REVENUE, EXPENSE_OPERATIONAL, EQUITY_CAPITAL,
                                     ASSET_CA_RECEIVABLES, LIABILITY_CL_ACC_PAYABLE)
-from django_ledger.models import (EntityModel, TransactionModel, VendorModel, CustomerModel,
-                                  EntityUnitModel, BankAccountModel, UnitOfMeasureModel, ItemModel,
-                                  BillModel, ItemTransactionModel, InvoiceModel,
-                                  EstimateModel, LoggingMixIn, InvoiceModelValidationError, ChartOfAccountModel)
+from django_ledger.models import (EntityModel, TransactionModel, VendorModel,
+                                  EntityUnitModel,
+                                  LoggingMixIn, InvoiceModelValidationError, ChartOfAccountModel)
+from django_ledger.models.utils import lazy_loader
 from django_ledger.utils import (generate_random_sku, generate_random_upc, generate_random_item_id)
 
 try:
@@ -276,10 +276,12 @@ class EntityDataGenerator(LoggingMixIn):
         for customer in customer_models:
             customer.full_clean()
 
+        CustomerModel = lazy_loader.get_customer_model()
         self.customer_models = CustomerModel.objects.bulk_create(customer_models, ignore_conflicts=True)
 
     def create_bank_accounts(self):
         self.logger.info(f'Creating entity accounts...')
+        BankAccountModel = lazy_loader.get_bank_account_model()
         bank_account_models = [
 
             # creates a bank cash checking account...
@@ -338,10 +340,12 @@ class EntityDataGenerator(LoggingMixIn):
         for uom in uom_models:
             uom.full_clean()
 
+        UnitOfMeasureModel = lazy_loader.get_uom_model()
         self.uom_models = UnitOfMeasureModel.objects.bulk_create(uom_models)
 
     def create_products(self):
         self.logger.info(f'Creating entity product items...')
+        ItemModel = lazy_loader.get_item_model()
         product_count = randint(self.PRODUCTS_MIN, self.PRODUCTS_MAX)
         product_models = list()
         for i in range(product_count):
@@ -370,6 +374,7 @@ class EntityDataGenerator(LoggingMixIn):
 
     def create_services(self):
         self.logger.info(f'Creating entity service items...')
+        ItemModel = lazy_loader.get_item_model()
         product_count = randint(self.PRODUCTS_MIN, self.PRODUCTS_MAX)
         service_item_models = list()
         for i in range(product_count):
@@ -396,6 +401,7 @@ class EntityDataGenerator(LoggingMixIn):
 
     def create_expenses(self):
         self.logger.info(f'Creating entity expense items...')
+        ItemModel = lazy_loader.get_item_model()
         expense_count = randint(self.PRODUCTS_MIN, self.PRODUCTS_MAX)
         expense_models = [
             ItemModel(
@@ -421,6 +427,7 @@ class EntityDataGenerator(LoggingMixIn):
 
     def create_inventories(self):
         self.logger.info(f'Creating entity inventory items...')
+        ItemModel = lazy_loader.get_item_model()
         inv_count = randint(self.PRODUCTS_MIN, self.PRODUCTS_MAX)
         inventory_models = [
             ItemModel(
@@ -462,6 +469,8 @@ class EntityDataGenerator(LoggingMixIn):
         self.expense_models = self.entity_model.get_items_expenses()
 
     def create_estimate(self, date_draft: date):
+        EstimateModel = lazy_loader.get_estimate_model()
+        ItemTransactionModel = lazy_loader.get_item_transaction_model()
         estimate_model = self.entity_model.create_estimate(
             estimate_title=f'Customer Estimate {date_draft}',
             date_draft=date_draft,
@@ -489,7 +498,7 @@ class EntityDataGenerator(LoggingMixIn):
         estimate_model.update_state(itemtxs_qs=estimate_items)
         estimate_model.save()
 
-        estimate_items = estimate_model.itemtransactionmodel_set.bulk_create(objs=estimate_items)
+        estimate_items = estimate_model.get_itemtxs_related_manager().bulk_create(objs=estimate_items)
 
         if random() > 0.25:
             date_in_review = self.get_next_timestamp(date_draft)
@@ -508,6 +517,8 @@ class EntityDataGenerator(LoggingMixIn):
                 estimate_model.mark_as_canceled(commit=True, date_canceled=date_canceled)
 
     def create_bill(self, date_draft: date):
+        BillModel = lazy_loader.get_bill_model()
+        ItemTransactionModel = lazy_loader.get_item_transaction_model()
         bill_model = self.entity_model.create_bill(
             vendor_model=choice(self.vendor_models),
             cash_account=choice(self.accounts_by_role[ASSET_CA_CASH]),
@@ -535,7 +546,7 @@ class EntityDataGenerator(LoggingMixIn):
             bi.full_clean()
 
         bill_model.update_amount_due(itemtxs_qs=bill_items)
-        bill_model.itemtransactionmodel_set.bulk_create(bill_items)
+        bill_model.get_itemtxs_related_manager().bulk_create(bill_items)
         bill_model.full_clean()
         bill_model.save()
 
@@ -573,6 +584,8 @@ class EntityDataGenerator(LoggingMixIn):
                 bill_model.mark_as_canceled(date_canceled=canceled_date)
 
     def create_po(self, date_draft: date):
+        BillModel = lazy_loader.get_bill_model()
+        ItemTransactionModel = lazy_loader.get_item_transaction_model()
 
         po_model = self.entity_model.create_purchase_order(date_draft=date_draft)
 
@@ -590,7 +603,7 @@ class EntityDataGenerator(LoggingMixIn):
             poi.full_clean()
 
         self.logger.info(f'Creating entity purchase order {po_model.po_number}...')
-        po_items = po_model.itemtransactionmodel_set.bulk_create(po_items)
+        po_items = po_model.get_itemtxs_related_manager().bulk_create(po_items)
         po_model.update_state(itemtxs_qs=po_items)
         po_model.full_clean()
         po_model.save()
@@ -631,7 +644,7 @@ class EntityDataGenerator(LoggingMixIn):
                     bill_model.update_state()
                     bill_model.save()
 
-                    po_model.itemtransactionmodel_set.bulk_update(
+                    po_model.get_itemtxs_related_manager().bulk_update(
                         po_items,
                         fields=[
                             'po_total_amount',
@@ -668,11 +681,11 @@ class EntityDataGenerator(LoggingMixIn):
                                         po_i.full_clean()
 
                                     # todo: can pass po items??..
-                                    po_model.itemtransactionmodel_set.bulk_update(po_items,
-                                                                                  fields=[
-                                                                                      'po_item_status',
-                                                                                      'updated'
-                                                                                  ])
+                                    po_model.get_itemtxs_related_manager().bulk_update(po_items,
+                                                                                       fields=[
+                                                                                           'po_item_status',
+                                                                                           'updated'
+                                                                                       ])
                                     po_model.mark_as_fulfilled(
                                         date_fulfilled=date_fulfilled,
                                         commit=True)
@@ -685,6 +698,8 @@ class EntityDataGenerator(LoggingMixIn):
                                     self.update_inventory()
 
     def create_invoice(self, date_draft: date):
+        InvoiceModel = lazy_loader.get_invoice_model()
+        ItemTransactionModel = lazy_loader.get_item_transaction_model()
         invoice_model = self.entity_model.create_invoice(
             customer_model=choice(self.customer_models),
             terms=choice(InvoiceModel.TERM_CHOICES_VALID),
@@ -700,7 +715,7 @@ class EntityDataGenerator(LoggingMixIn):
         invoice_items = list()
 
         for i in range(randint(1, 10)):
-            item_model: ItemModel = choice(self.product_models)
+            item_model = choice(self.product_models)
             quantity = Decimal.from_float(round(random() * randint(1, 2), 2))
             entity_unit = choice(self.entity_unit_models) if random() > .75 else None
             margin = Decimal(random() + 3.5)
@@ -732,7 +747,7 @@ class EntityDataGenerator(LoggingMixIn):
                     itm.full_clean()
                     invoice_items.append(itm)
 
-        invoice_items = invoice_model.itemtransactionmodel_set.bulk_create(invoice_items)
+        invoice_items = invoice_model.get_itemtxs_related_manager().bulk_create(invoice_items)
         invoice_model.update_amount_due(itemtxs_qs=invoice_items)
         invoice_model.full_clean()
         invoice_model.save()

@@ -21,7 +21,8 @@ from django_ledger.forms.item import (
     ExpenseItemCreateForm, ExpenseItemUpdateForm, InventoryItemCreateForm, InventoryItemUpdateForm,
     ServiceCreateForm, ServiceUpdateForm
 )
-from django_ledger.models import ItemModel, UnitOfMeasureModel, EntityModel, UnitOfMeasureModelQuerySet
+from django_ledger.models import EntityModel, UnitOfMeasureModelQuerySet
+from django_ledger.models.utils import lazy_loader
 from django_ledger.views.mixins import DjangoLedgerSecurityMixIn
 
 
@@ -34,7 +35,8 @@ class UnitOfMeasureModelModelBaseView(DjangoLedgerSecurityMixIn):
     def get_queryset(self):
         if self.queryset is None:
             entity_model: EntityModel = self.get_authorized_entity_instance()
-            self.queryset = entity_model.unitofmeasuremodel_set.all()
+            UnitOfMeasureModel = lazy_loader.get_uom_model()
+            self.queryset = UnitOfMeasureModel.objects.for_entity(entity_model)
         return self.queryset
 
 
@@ -72,7 +74,7 @@ class UnitOfMeasureModelCreateView(UnitOfMeasureModelModelBaseView, CreateView):
         )
 
     def form_valid(self, form):
-        instance: UnitOfMeasureModel = form.save(commit=False)
+        instance = form.save(commit=False)
         entity_slug = self.kwargs['entity_slug']
         try:
             entity_model: EntityModel = self.AUTHORIZED_ENTITY_MODEL
@@ -132,7 +134,7 @@ class UnitOfMeasureModelDeleteView(UnitOfMeasureModelModelBaseView, DeleteView):
             return super(UnitOfMeasureModelDeleteView, self).form_valid(form)
         except RestrictedError:
 
-            uom_model: UnitOfMeasureModel = self.object
+            uom_model = self.object
             add_message(self.request,
                         level=ERROR,
                         message=f'Unable to delete UOM {uom_model.name}. '
@@ -160,7 +162,8 @@ class ProductItemModelModelBaseView(DjangoLedgerSecurityMixIn):
     def get_queryset(self):
         if not self.queryset:
             entity_model: EntityModel = self.get_authorized_entity_instance()
-            self.queryset = entity_model.itemmodel_set.products().select_related(
+            ItemModel = lazy_loader.get_item_model()
+            self.queryset = ItemModel.objects.for_entity(entity_model).products().select_related(
                 'earnings_account',
                 'cogs_account',
                 'inventory_account',
@@ -181,7 +184,7 @@ class ProductListView(ProductItemModelModelBaseView, ListView):
 
 class ProductCreateView(ProductItemModelModelBaseView, CreateView):
     template_name = 'django_ledger/product/product_create.html'
-    model = ItemModel
+    model = lazy_loader.get_item_model()
     PAGE_TITLE = _('Create New Product')
     extra_context = {
         'page_title': PAGE_TITLE,
@@ -206,7 +209,8 @@ class ProductCreateView(ProductItemModelModelBaseView, CreateView):
         entity_slug = self.kwargs['entity_slug']
         entity_model_qs = EntityModel.objects.for_user(user_model=self.request.user)
         entity_model = get_object_or_404(entity_model_qs, slug__exact=entity_slug)
-        item_model: ItemModel = form.save(commit=False)
+        ItemModel = lazy_loader.get_item_model()
+        item_model = form.save(commit=False)
         item_model.entity = entity_model
         item_model.item_role = ItemModel.ITEM_ROLE_PRODUCT
         return super().form_valid(form=form)
@@ -224,6 +228,7 @@ class ProductUpdateView(ProductItemModelModelBaseView, UpdateView):
     }
 
     def get_queryset(self):
+        ItemModel = lazy_loader.get_item_model()
         return ItemModel.objects.for_entity(
             entity_model=self.AUTHORIZED_ENTITY_MODEL
         ).products()
@@ -253,7 +258,7 @@ class ProductDeleteView(ProductItemModelModelBaseView, DeleteView):
             return super(ProductDeleteView, self).form_valid(form)
         except RestrictedError:
 
-            item_model: ItemModel = self.object
+            item_model = self.object
             add_message(self.request,
                         level=ERROR,
                         message=f'Unable to delete Product or Service {item_model.name}. '
@@ -281,7 +286,8 @@ class ServiceItemModelModelBaseView(DjangoLedgerSecurityMixIn):
     def get_queryset(self):
         if not self.queryset:
             entity_model: EntityModel = self.get_authorized_entity_instance()
-            self.queryset = entity_model.itemmodel_set.services().select_related(
+            ItemModel = lazy_loader.get_item_model()
+            self.queryset = ItemModel.objects.for_entity(entity_model).services().select_related(
                 'earnings_account',
                 'cogs_account',
                 'inventory_account',
@@ -302,7 +308,7 @@ class ServiceListView(ServiceItemModelModelBaseView, ListView):
 
 class ServiceCreateView(ServiceItemModelModelBaseView, CreateView):
     template_name = 'django_ledger/service/service_create.html'
-    model = ItemModel
+    model = lazy_loader.get_item_model()
     PAGE_TITLE = _('Create New Service')
     extra_context = {
         'page_title': PAGE_TITLE,
@@ -327,7 +333,7 @@ class ServiceCreateView(ServiceItemModelModelBaseView, CreateView):
         entity_slug = self.kwargs['entity_slug']
         entity_model_qs = EntityModel.objects.for_user(user_model=self.request.user)
         entity_model = get_object_or_404(entity_model_qs, slug__exact=entity_slug)
-        item_model: ItemModel = form.save(commit=False)
+        item_model = form.save(commit=False)
         item_model.entity = entity_model
         return super().form_valid(form=form)
 
@@ -344,6 +350,7 @@ class ServiceUpdateView(ServiceItemModelModelBaseView, UpdateView):
     }
 
     def get_queryset(self):
+        ItemModel = lazy_loader.get_item_model()
         return ItemModel.objects.for_entity(
             entity_model=self.kwargs['entity_slug']
         ).services()
@@ -373,7 +380,7 @@ class ServiceDeleteView(ServiceItemModelModelBaseView, DeleteView):
             return super(ServiceDeleteView, self).form_valid(form)
         except RestrictedError:
 
-            item_model: ItemModel = self.object
+            item_model = self.object
             add_message(self.request,
                         level=ERROR,
                         message=f'Unable to delete Product or Service {item_model.name}. '
@@ -401,7 +408,8 @@ class ExpenseItemItemModelModelBaseView(DjangoLedgerSecurityMixIn):
     def get_queryset(self):
         if not self.queryset:
             entity_model: EntityModel = self.get_authorized_entity_instance()
-            self.queryset = entity_model.itemmodel_set.expenses().select_related(
+            ItemModel = lazy_loader.get_item_model()
+            self.queryset = ItemModel.objects.for_entity(entity_model).expenses().select_related(
                 'expense_account',
                 'uom').order_by('-updated')
         return super().get_queryset()
@@ -420,7 +428,7 @@ class ExpenseItemModelListView(ExpenseItemItemModelModelBaseView, ListView):
 
 class ExpenseItemCreateView(ExpenseItemItemModelModelBaseView, CreateView):
     template_name = 'django_ledger/expense/expense_create.html'
-    model = ItemModel
+    model = lazy_loader.get_item_model()
     PAGE_TITLE = _('Create New Expense Item')
     extra_context = {
         'page_title': PAGE_TITLE,
@@ -445,7 +453,8 @@ class ExpenseItemCreateView(ExpenseItemItemModelModelBaseView, CreateView):
         entity_slug = self.kwargs['entity_slug']
         entity_model_qs = EntityModel.objects.for_user(user_model=self.request.user)
         entity_model = get_object_or_404(entity_model_qs, slug__exact=entity_slug)
-        item_model: ItemModel = form.save(commit=False)
+        ItemModel = lazy_loader.get_item_model()
+        item_model = form.save(commit=False)
         item_model.entity = entity_model
         item_model.item_role = ItemModel.ITEM_ROLE_EXPENSE
         return super().form_valid(form=form)
@@ -484,7 +493,8 @@ class InventoryItemItemModelModelBaseView(DjangoLedgerSecurityMixIn):
     def get_queryset(self):
         if not self.queryset:
             entity_model: EntityModel = self.get_authorized_entity_instance()
-            self.queryset = entity_model.itemmodel_set.inventory_wip().select_related(
+            ItemModel = lazy_loader.get_item_model()
+            self.queryset = ItemModel.objects.for_entity(entity_model).inventory_wip().select_related(
                 'inventory_account',
                 'cogs_account',
                 'uom'
@@ -505,7 +515,7 @@ class InventoryItemModelListView(InventoryItemItemModelModelBaseView, ListView):
 
 class InventoryItemCreateView(InventoryItemItemModelModelBaseView, CreateView):
     template_name = 'django_ledger/inventory/inventory_item_create.html'
-    model = ItemModel
+    model = lazy_loader.get_item_model()
     PAGE_TITLE = _('Create New Inventory Item')
     extra_context = {
         'page_title': PAGE_TITLE,
@@ -534,7 +544,8 @@ class InventoryItemCreateView(InventoryItemItemModelModelBaseView, CreateView):
         entity_slug = self.kwargs['entity_slug']
         entity_model_qs = EntityModel.objects.for_user(user_model=self.request.user)
         entity_model = get_object_or_404(entity_model_qs, slug__exact=entity_slug)
-        item_model: ItemModel = form.save(commit=False)
+        ItemModel = lazy_loader.get_item_model()
+        item_model = form.save(commit=False)
         item_model.entity = entity_model
         item_model.item_role = ItemModel.ITEM_ROLE_INVENTORY
         return super().form_valid(form=form)

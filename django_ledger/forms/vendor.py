@@ -9,7 +9,7 @@ Miguel Sanda <msanda@arrobalytics.com>
 from django.forms import ModelForm, TextInput, EmailInput
 
 from django_ledger.forms.utils import validate_cszc
-from django_ledger.models.vendor import VendorModel
+from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import DJANGO_LEDGER_FORM_INPUT_CLASSES
 
 
@@ -19,7 +19,7 @@ class VendorModelForm(ModelForm):
         validate_cszc(self.cleaned_data)
 
     class Meta:
-        model = VendorModel
+        model = lazy_loader.get_vendor_model()
         fields = [
             'vendor_name',
             'vendor_code',

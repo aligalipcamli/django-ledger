@@ -10,7 +10,8 @@ from django.forms import (ModelForm, DateInput, TextInput, Select, BaseModelForm
                           modelformset_factory, Textarea, BooleanField, ValidationError)
 from django.utils.translation import gettext_lazy as _
 
-from django_ledger.models import (ItemModel, PurchaseOrderModel, ItemTransactionModel, EntityUnitModel)
+from django_ledger.models import EntityUnitModel
+from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import DJANGO_LEDGER_FORM_INPUT_CLASSES
 
 
@@ -21,7 +22,7 @@ class PurchaseOrderModelCreateForm(ModelForm):
         self.USER_MODEL = user_model
 
     class Meta:
-        model = PurchaseOrderModel
+        model = lazy_loader.get_purchase_order_model()
         fields = [
             'po_title',
         ]
@@ -41,10 +42,10 @@ class BasePurchaseOrderModelUpdateForm(ModelForm):
         super().__init__(*args, **kwargs)
         self.ENTITY_SLUG = entity_slug
         self.USER_MODEL = user_model
-        self.PO_MODEL: PurchaseOrderModel = self.instance
+        self.PO_MODEL = self.instance
 
     class Meta:
-        model = PurchaseOrderModel
+        model = lazy_loader.get_purchase_order_model()
         fields = [
             'markdown_notes'
         ]
@@ -95,7 +96,7 @@ class PurchaseOrderItemTransactionForm(ModelForm):
     create_bill = BooleanField(required=False)
 
     class Meta:
-        model = ItemTransactionModel
+        model = lazy_loader.get_item_transaction_model()
         fields = [
             'item_model',
             'po_unit_cost',
@@ -125,9 +126,10 @@ class PurchaseOrderItemTransactionForm(ModelForm):
     def clean(self):
         cleaned_data = super(PurchaseOrderItemTransactionForm, self).clean()
         po_item_status = cleaned_data['po_item_status']
-        po_item_model: ItemTransactionModel = self.instance
+        ItemTransactionModel = lazy_loader.get_item_transaction_model()
+        po_item_model = self.instance
         if 'po_item_status' in self.changed_data:
-            po_model: PurchaseOrderModel = getattr(self, 'PO_MODEL')
+            po_model = getattr(self, 'PO_MODEL')
             if po_model.po_status == po_model.PO_STATUS_APPROVED:
                 if not po_item_status:
                     raise ValidationError('Cannot assign null status to approved PO.')
@@ -148,12 +150,13 @@ class PurchaseOrderItemTransactionForm(ModelForm):
 
 class BasePurchaseOrderItemFormset(BaseModelFormSet):
 
-    def __init__(self, *args, entity_slug, user_model, po_model: PurchaseOrderModel, **kwargs):
+    def __init__(self, *args, entity_slug, user_model, po_model, **kwargs):
         super().__init__(*args, **kwargs)
         self.USER_MODEL = user_model
         self.ENTITY_SLUG = entity_slug
         self.PO_MODEL = po_model
 
+        ItemModel = lazy_loader.get_item_model()
         items_qs = ItemModel.objects.for_po(
             entity_model=self.ENTITY_SLUG,
         )
@@ -184,7 +187,7 @@ class BasePurchaseOrderItemFormset(BaseModelFormSet):
 
 
 CanEditPurchaseOrderItemFormset = modelformset_factory(
-    model=ItemTransactionModel,
+    model=lazy_loader.get_item_transaction_model(),
     form=PurchaseOrderItemTransactionForm,
     formset=BasePurchaseOrderItemFormset,
     can_delete=True,
@@ -192,7 +195,7 @@ CanEditPurchaseOrderItemFormset = modelformset_factory(
 )
 
 ReadOnlyPurchaseOrderItemFormset = modelformset_factory(
-    model=ItemTransactionModel,
+    model=lazy_loader.get_item_transaction_model(),
     form=PurchaseOrderItemTransactionForm,
     formset=BasePurchaseOrderItemFormset,
     can_delete=False,
@@ -200,7 +203,7 @@ ReadOnlyPurchaseOrderItemFormset = modelformset_factory(
 )
 
 
-def get_po_itemtxs_formset_class(po_model: PurchaseOrderModel):
+def get_po_itemtxs_formset_class(po_model):
     if po_model.is_draft():
         return CanEditPurchaseOrderItemFormset
     return ReadOnlyPurchaseOrderItemFormset

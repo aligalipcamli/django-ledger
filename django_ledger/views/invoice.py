@@ -23,7 +23,7 @@ from django_ledger.forms.invoice import (BaseInvoiceModelUpdateForm, InvoiceMode
                                          AccruedAndApprovedInvoiceModelUpdateForm, InvoiceModelCreateForm)
 from django_ledger.io.io_core import get_localdate
 from django_ledger.models import EntityModel, LedgerModel, EstimateModel
-from django_ledger.models.invoice import InvoiceModel
+from django_ledger.models.utils import lazy_loader
 from django_ledger.views.mixins import DjangoLedgerSecurityMixIn
 
 
@@ -32,6 +32,7 @@ class InvoiceModelModelViewQuerySetMixIn:
 
     def get_queryset(self):
         if self.queryset is None:
+            InvoiceModel = lazy_loader.get_invoice_model()
             self.queryset = InvoiceModel.objects.for_entity(
                 entity_model=self.kwargs['entity_slug']
             ).select_related('customer', 'ledger').order_by('-created')
@@ -77,6 +78,7 @@ class InvoiceModelCreateView(DjangoLedgerSecurityMixIn, InvoiceModelModelViewQue
             return HttpResponseForbidden()
 
         if self.for_estimate and 'ce_pk' in self.kwargs:
+            EstimateModel = lazy_loader.get_estimate_model()
             estimate_qs = EstimateModel.objects.for_entity(
                 entity_slug=entity_slug,
                 user_model=self.request.user
@@ -95,6 +97,7 @@ class InvoiceModelCreateView(DjangoLedgerSecurityMixIn, InvoiceModelModelViewQue
                                                      'entity_slug': self.kwargs['entity_slug'],
                                                      'ce_pk': self.kwargs['ce_pk']
                                                  })
+            EstimateModel = lazy_loader.get_estimate_model()
             estimate_qs = EstimateModel.objects.for_entity(
                 entity_model=self.AUTHORIZED_ENTITY_MODEL,
             ).select_related('customer')
@@ -134,6 +137,7 @@ class InvoiceModelCreateView(DjangoLedgerSecurityMixIn, InvoiceModelModelViewQue
         )
 
         if self.for_estimate:
+            EstimateModel = lazy_loader.get_estimate_model()
             ce_pk = self.kwargs['ce_pk']
             estimate_model_qs = EstimateModel.objects.for_entity(
                 entity_model=self.AUTHORIZED_ENTITY_MODEL,
@@ -236,7 +240,7 @@ class InvoiceModelUpdateView(DjangoLedgerSecurityMixIn, InvoiceModelModelViewQue
                                  extra_tags='is-info')
 
         if not itemtxs_formset:
-            itemtxs_qs = invoice_model.itemtransactionmodel_set.all().select_related('item_model')
+            itemtxs_qs = invoice_model.get_itemtxs_related_manager().all().select_related('item_model')
             itemtxs_qs, itemtxs_agg = invoice_model.get_itemtxs_data(queryset=itemtxs_qs)
             invoice_itemtxs_formset_class = get_invoice_itemtxs_formset_class(invoice_model)
             itemtxs_formset = invoice_itemtxs_formset_class(
@@ -263,7 +267,8 @@ class InvoiceModelUpdateView(DjangoLedgerSecurityMixIn, InvoiceModelModelViewQue
 
     def get_queryset(self):
         qs = super().get_queryset()
-        return qs.prefetch_related('itemtransactionmodel_set')
+        invoice_itemtxs_related_name = lazy_loader.get_item_transaction_model_related_name('invoice_model')
+        return qs.prefetch_related(invoice_itemtxs_related_name)
 
     def form_valid(self, form):
         invoice_model: InvoiceModel = form.save(commit=False)

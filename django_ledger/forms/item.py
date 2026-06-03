@@ -2,7 +2,8 @@ from django.forms import ModelForm, TextInput, Select
 from django.utils.translation import gettext_lazy as _
 
 from django_ledger.io.roles import GROUP_INCOME, ASSET_CA_INVENTORY, GROUP_EXPENSES, GROUP_COGS
-from django_ledger.models import AccountModel, ItemModel, UnitOfMeasureModel
+from django_ledger.models import AccountModel
+from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import DJANGO_LEDGER_FORM_INPUT_CLASSES
 
 
@@ -15,7 +16,7 @@ class UnitOfMeasureModelCreateForm(ModelForm):
         super().__init__(*args, **kwargs)
 
     class Meta:
-        model = UnitOfMeasureModel
+        model = lazy_loader.get_uom_model()
         fields = [
             'name',
             'unit_abbr',
@@ -60,16 +61,22 @@ class ProductCreateForm(ModelForm):
         self.fields['inventory_account'].queryset = accounts_qs.filter(role__in=[ASSET_CA_INVENTORY])
 
         if 'uom' in self.fields:
+            UnitOfMeasureModel = lazy_loader.get_uom_model()
             uom_qs = UnitOfMeasureModel.objects.for_entity_active(
                 entity_model=self.ENTITY_SLUG
             )
             self.fields['uom'].queryset = uom_qs
 
         if 'item_type' in self.fields:
-            self.fields['item_type'].choices = ItemModel.ITEM_TYPE_CHOICES_PRODUCT
+            ItemModel = lazy_loader.get_item_model()
+            self.fields['item_type'].choices = getattr(
+                ItemModel,
+                'ITEM_TYPE_CHOICES_PRODUCT',
+                ItemModel.ITEM_TYPE_CHOICES,
+            )
 
     class Meta:
-        model = ItemModel
+        model = lazy_loader.get_item_model()
         fields = [
             'name',
             'sku',
@@ -120,7 +127,8 @@ class ProductCreateForm(ModelForm):
         }
 
     def clean(self):
-        item_model: ItemModel = self.instance
+        ItemModel = lazy_loader.get_item_model()
+        item_model = self.instance
         item_model.item_role = ItemModel.ITEM_ROLE_PRODUCT
         return super().clean()
 
@@ -152,13 +160,14 @@ class ServiceCreateForm(ModelForm):
         self.fields['cogs_account'].queryset = accounts_qs.filter(role__in=GROUP_COGS)
 
         if 'uom' in self.fields:
+            UnitOfMeasureModel = lazy_loader.get_uom_model()
             uom_qs = UnitOfMeasureModel.objects.for_entity_active(
                 entity_model=self.ENTITY_SLUG,
             )
             self.fields['uom'].queryset = uom_qs
 
     class Meta:
-        model = ItemModel
+        model = lazy_loader.get_item_model()
         fields = [
             'name',
             'sku',
@@ -208,7 +217,8 @@ class ServiceCreateForm(ModelForm):
         }
 
     def clean(self):
-        item_model: ItemModel = self.instance
+        ItemModel = lazy_loader.get_item_model()
+        item_model = self.instance
         item_model.item_role = ItemModel.ITEM_ROLE_SERVICE
         return super().clean()
 
@@ -233,13 +243,14 @@ class ExpenseItemCreateForm(ModelForm):
         self.fields['expense_account'].queryset = accounts_qs.filter(role__in=GROUP_EXPENSES)
 
         if 'uom' in self.fields:
+            UnitOfMeasureModel = lazy_loader.get_uom_model()
             uom_qs = UnitOfMeasureModel.objects.for_entity(
                 entity_model=self.ENTITY_SLUG
             ).for_user(user_model=self.USER_MODEL)
             self.fields['uom'].queryset = uom_qs
 
     class Meta:
-        model = ItemModel
+        model = lazy_loader.get_item_model()
         fields = [
             'name',
             'upc',
@@ -282,7 +293,8 @@ class ExpenseItemCreateForm(ModelForm):
         }
 
     def clean(self):
-        item_model: ItemModel = self.instance
+        ItemModel = lazy_loader.get_item_model()
+        item_model = self.instance
         item_model.item_role = ItemModel.ITEM_ROLE_EXPENSE
         return super().clean()
 
@@ -315,13 +327,14 @@ class InventoryItemCreateForm(ModelForm):
         self.fields['inventory_account'].queryset = inventory_account_qs
 
         if 'uom' in self.fields:
+            UnitOfMeasureModel = lazy_loader.get_uom_model()
             uom_qs = UnitOfMeasureModel.objects.for_entity_active(
                 entity_model=self.ENTITY_SLUG,
             )
             self.fields['uom'].queryset = uom_qs
 
     class Meta:
-        model = ItemModel
+        model = lazy_loader.get_item_model()
         fields = [
             'name',
             'uom',
@@ -369,7 +382,8 @@ class InventoryItemCreateForm(ModelForm):
         }
 
     def clean(self):
-        item_model: ItemModel = self.instance
+        ItemModel = lazy_loader.get_item_model()
+        item_model = self.instance
         item_model.item_role = ItemModel.ITEM_ROLE_INVENTORY
         return super().clean()
 

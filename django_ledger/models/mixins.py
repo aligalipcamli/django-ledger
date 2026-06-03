@@ -1430,6 +1430,26 @@ class ItemizeMixIn(models.Model):
         """
         raise NotImplementedError()
 
+    def get_itemtxs_related_manager(self):
+        BillModel = lazy_loader.get_bill_model()
+        InvoiceModel = lazy_loader.get_invoice_model()
+        EstimateModel = lazy_loader.get_estimate_model()
+        PurchaseOrderModel = lazy_loader.get_purchase_order_model()
+
+        if isinstance(self, BillModel):
+            field_name = 'bill_model'
+        elif isinstance(self, InvoiceModel):
+            field_name = 'invoice_model'
+        elif isinstance(self, EstimateModel):
+            field_name = 'ce_model'
+        elif isinstance(self, PurchaseOrderModel):
+            field_name = 'po_model'
+        else:
+            raise TypeError(f'{self.__class__.__name__} is not an itemized document model.')
+
+        related_name = lazy_loader.get_item_transaction_model_related_name(field_name)
+        return getattr(self, related_name)
+
     def get_itemtxs_data(
         self, queryset=None, aggregate_on_db: bool = False, lazy_agg: bool = False
     ):

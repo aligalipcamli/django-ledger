@@ -22,6 +22,7 @@ from decimal import Decimal
 from typing import Union, Optional, Tuple, Dict
 from uuid import uuid4, UUID
 
+import swapper
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.db import models, transaction, IntegrityError
@@ -35,7 +36,7 @@ from django_ledger.io import ASSET_CA_CASH, ASSET_CA_RECEIVABLES, LIABILITY_CL_D
 from django_ledger.io.io_core import get_localtime, get_localdate
 from django_ledger.models import (
     lazy_loader, ItemTransactionModelQuerySet,
-    ItemModelQuerySet, ItemModel, QuerySet, Manager
+    ItemModelQuerySet, QuerySet, Manager
 )
 from django_ledger.models.deprecations import deprecated_entity_slug_behavior
 from django_ledger.models.entity import EntityModel
@@ -80,7 +81,7 @@ class InvoiceModelQuerySet(QuerySet):
         InvoiceModelQuerySet
             Returns a QuerySet of draft invoices only.
         """
-        return self.filter(invoice_status__exact=InvoiceModel.INVOICE_STATUS_DRAFT)
+        return self.filter(invoice_status__exact=self.model.INVOICE_STATUS_DRAFT)
 
     def in_review(self):
         """
@@ -92,7 +93,7 @@ class InvoiceModelQuerySet(QuerySet):
         InvoiceModelQuerySet
             Returns a QuerySet of in review invoices only.
         """
-        return self.filter(invoice_status__exact=InvoiceModel.INVOICE_STATUS_REVIEW)
+        return self.filter(invoice_status__exact=self.model.INVOICE_STATUS_REVIEW)
 
     def approved(self):
         """
@@ -103,7 +104,7 @@ class InvoiceModelQuerySet(QuerySet):
         InvoiceModelQuerySet
             Returns a QuerySet of approved invoices only.
         """
-        return self.filter(invoice_status__exact=InvoiceModel.INVOICE_STATUS_APPROVED)
+        return self.filter(invoice_status__exact=self.model.INVOICE_STATUS_APPROVED)
 
     def paid(self):
         """
@@ -114,7 +115,7 @@ class InvoiceModelQuerySet(QuerySet):
         InvoiceModelQuerySet
             Returns a QuerySet of paid invoices only.
         """
-        return self.filter(invoice_status__exact=InvoiceModel.INVOICE_STATUS_PAID)
+        return self.filter(invoice_status__exact=self.model.INVOICE_STATUS_PAID)
 
     def void(self):
         """
@@ -126,7 +127,7 @@ class InvoiceModelQuerySet(QuerySet):
         InvoiceModelQuerySet
             Returns a QuerySet of void invoices only.
         """
-        return self.filter(invoice_status__exact=InvoiceModel.INVOICE_STATUS_VOID)
+        return self.filter(invoice_status__exact=self.model.INVOICE_STATUS_VOID)
 
     def canceled(self):
         """
@@ -138,7 +139,7 @@ class InvoiceModelQuerySet(QuerySet):
         InvoiceModelQuerySet
             Returns a QuerySet of canceled invoices only.
         """
-        return self.filter(invoice_status__exact=InvoiceModel.INVOICE_STATUS_CANCELED)
+        return self.filter(invoice_status__exact=self.model.INVOICE_STATUS_CANCELED)
 
     def active(self):
         """
@@ -151,8 +152,8 @@ class InvoiceModelQuerySet(QuerySet):
             Returns a QuerySet of active invoices only.
         """
         return self.filter(
-            Q(invoice_status__exact=InvoiceModel.INVOICE_STATUS_APPROVED) |
-            Q(invoice_status__exact=InvoiceModel.INVOICE_STATUS_PAID)
+            Q(invoice_status__exact=self.model.INVOICE_STATUS_APPROVED) |
+            Q(invoice_status__exact=self.model.INVOICE_STATUS_PAID)
         )
 
     def overdue(self):
@@ -176,7 +177,7 @@ class InvoiceModelQuerySet(QuerySet):
         InvoiceModelQuerySet
             Returns a QuerySet of paid invoices only.
         """
-        return self.filter(invoice_status__exact=InvoiceModel.INVOICE_STATUS_APPROVED)
+        return self.filter(invoice_status__exact=self.model.INVOICE_STATUS_APPROVED)
 
     def for_user(self, user_model):
         if user_model.is_superuser:
@@ -333,7 +334,7 @@ class InvoiceModelAbstract(
                                       verbose_name=_('Invoice Number'))
     invoice_status = models.CharField(max_length=10, choices=INVOICE_STATUS, default=INVOICE_STATUS[0][0],
                                       verbose_name=_('Invoice Status'))
-    customer = models.ForeignKey('django_ledger.CustomerModel',
+    customer = models.ForeignKey(swapper.get_model_name('django_ledger', 'CustomerModel'),
                                  on_delete=models.RESTRICT,
                                  verbose_name=_('Customer'))
 
@@ -360,12 +361,12 @@ class InvoiceModelAbstract(
                                        null=True,
                                        default=dict,
                                        verbose_name=_('Invoice Additional Info'))
-    invoice_items = models.ManyToManyField('django_ledger.ItemModel',
-                                           through='django_ledger.ItemTransactionModel',
+    invoice_items = models.ManyToManyField(swapper.get_model_name('django_ledger', 'ItemModel'),
+                                           through=swapper.get_model_name('django_ledger', 'ItemTransactionModel'),
                                            through_fields=('invoice_model', 'item_model'),
                                            verbose_name=_('Invoice Items'))
 
-    ce_model = models.ForeignKey('django_ledger.EstimateModel',
+    ce_model = models.ForeignKey(swapper.get_model_name('django_ledger', 'EstimateModel'),
                                  on_delete=models.RESTRICT,
                                  null=True,
                                  blank=True,
@@ -511,6 +512,7 @@ class InvoiceModelAbstract(
         return itemtxs_batch
 
     def get_item_model_qs(self) -> ItemModelQuerySet:
+        ItemModel = lazy_loader.get_item_model()
         return ItemModel.objects.filter(
             entity_id__exact=self.ledger.entity_id
         ).invoices()
@@ -549,7 +551,7 @@ class InvoiceModelAbstract(
         """
 
         if not queryset:
-            queryset = self.itemtransactionmodel_set.all().select_related(
+            queryset = self.get_itemtxs_related_manager().all().select_related(
                 'item_model',
                 'entity_unit',
                 'po_model',
@@ -604,7 +606,7 @@ class InvoiceModelAbstract(
             Optional pre-fetched ItemModelTransactionQueryset to use. Avoids additional DB query if provided.
         """
         if not queryset:
-            queryset = self.itemtransactionmodel_set.all()
+            queryset = self.get_itemtxs_related_manager().all()
         else:
             self.validate_itemtxs_qs(queryset)
 
@@ -1130,7 +1132,7 @@ class InvoiceModelAbstract(
         self.date_in_review = get_localdate() if not date_in_review else date_in_review
 
         if not itemtxs_qs:
-            itemtxs_qs = self.itemtransactionmodel_set.all()
+            itemtxs_qs = self.get_itemtxs_related_manager().all()
         if not itemtxs_qs.count():
             raise InvoiceModelValidationError(message='Cannot review an Invoice without items...')
         if not self.amount_due:
@@ -1863,9 +1865,10 @@ class InvoiceModel(InvoiceModelAbstract):
 
     class Meta(InvoiceModelAbstract.Meta):
         abstract = False
+        swappable = swapper.swappable_setting('django_ledger', 'InvoiceModel')
 
 
-def invoicemodel_presave(instance: InvoiceModel, **kwargs):
+def invoicemodel_presave(instance, **kwargs):
     if instance.can_generate_invoice_number():
         instance.generate_invoice_number(commit=False)
 
@@ -1873,4 +1876,8 @@ def invoicemodel_presave(instance: InvoiceModel, **kwargs):
         instance.entity_model = instance.ledger.entity
 
 
-pre_save.connect(receiver=invoicemodel_presave, sender=InvoiceModel)
+pre_save.connect(
+    receiver=invoicemodel_presave,
+    sender=swapper.get_model_name('django_ledger', 'InvoiceModel'),
+    dispatch_uid='django_ledger.invoicemodel_presave',
+)

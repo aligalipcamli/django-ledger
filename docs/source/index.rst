@@ -19,6 +19,17 @@ Created and developed by `Miguel Sanda <https://www.miguelsanda.com>`_.
    ./quickstart
    ./io
    ./models
+   ./custom_customer_model
+   ./custom_vendor_model
+   ./custom_bank_account_model
+   ./custom_unit_of_measure_model
+   ./custom_item_model
+   ./custom_invoice_model
+   ./custom_bill_model
+   ./custom_estimate_model
+   ./custom_item_transaction_model
+   ./custom_purchase_order_model
+   ./custom_receipt_model
 
 
 

@@ -11,7 +11,8 @@ from calendar import month_name
 from django.http import JsonResponse
 from django.views.generic import View
 
-from django_ledger.models import BillModel, EntityModel, InvoiceModel
+from django_ledger.models import EntityModel
+from django_ledger.models.utils import lazy_loader
 from django_ledger.utils import accruable_net_summary
 from django_ledger.views.mixins import DjangoLedgerSecurityMixIn, EntityUnitMixIn
 
@@ -72,6 +73,7 @@ class PayableNetAPIView(DjangoLedgerSecurityMixIn, EntityUnitMixIn, View):
 
     def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:
+            BillModel = lazy_loader.get_bill_model()
             bill_qs = BillModel.objects.for_entity(
                 entity_model=self.AUTHORIZED_ENTITY_MODEL
             ).unpaid()
@@ -103,6 +105,7 @@ class ReceivableNetAPIView(DjangoLedgerSecurityMixIn, EntityUnitMixIn, View):
 
     def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:
+            InvoiceModel = lazy_loader.get_invoice_model()
             invoice_qs = InvoiceModel.objects.for_entity(
                 entity_model=self.kwargs['entity_slug']
             ).for_user(self.request.user).unpaid()

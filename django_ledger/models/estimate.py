@@ -17,6 +17,7 @@ from string import ascii_uppercase, digits
 from typing import Union, Optional, List, Dict
 from uuid import uuid4, UUID
 
+import swapper
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.validators import MinValueValidator, MinLengthValidator
@@ -31,7 +32,7 @@ from django_ledger.io.io_core import get_localdate
 from django_ledger.models import BillModelQuerySet, InvoiceModelQuerySet, lazy_loader, deprecated_entity_slug_behavior
 from django_ledger.models.customer import CustomerModel
 from django_ledger.models.entity import EntityModel, EntityStateModel
-from django_ledger.models.items import ItemTransactionModelQuerySet, ItemTransactionModel, ItemModelQuerySet, ItemModel
+from django_ledger.models.items import ItemTransactionModelQuerySet, ItemTransactionModel, ItemModelQuerySet
 from django_ledger.models.mixins import CreateUpdateMixIn, MarkdownNotesMixIn, ItemizeMixIn
 from django_ledger.models.purchase_order import PurchaseOrderModelQuerySet
 from django_ledger.models.signals import (
@@ -278,7 +279,11 @@ class EstimateModelAbstract(CreateUpdateMixIn,
                                editable=False,
                                on_delete=models.CASCADE,
                                verbose_name=_('Entity Model'))
-    customer = models.ForeignKey('django_ledger.CustomerModel', on_delete=models.RESTRICT, verbose_name=_('Customer'))
+    customer = models.ForeignKey(
+        swapper.get_model_name('django_ledger', 'CustomerModel'),
+        on_delete=models.RESTRICT,
+        verbose_name=_('Customer'),
+    )
     terms = models.CharField(max_length=10, choices=CONTRACT_TERMS_CHOICES, verbose_name=_('Contract Terms'))
     title = models.CharField(max_length=250,
                              verbose_name=_('Customer Estimate Title'),
@@ -731,7 +736,7 @@ class EstimateModelAbstract(CreateUpdateMixIn,
             return
 
         if not itemtxs_qs:
-            itemtxs_qs = self.itemtransactionmodel_set.all()
+            itemtxs_qs = self.get_itemtxs_related_manager().all()
         else:
             self.validate_item_transaction_qs(itemtxs_qs=itemtxs_qs)
 
@@ -1127,6 +1132,7 @@ class EstimateModelAbstract(CreateUpdateMixIn,
         return itemtxs_batch
 
     def get_item_model_qs(self) -> ItemModelQuerySet:
+        ItemModel = lazy_loader.get_item_model()
         return ItemModel.objects.filter(
             entity_id__exact=self.entity_id
         ).estimates()
@@ -1165,7 +1171,7 @@ class EstimateModelAbstract(CreateUpdateMixIn,
         ItemTransactionModelQuerySet
         """
         if not queryset:
-            queryset = self.itemtransactionmodel_set.select_related('item_model').all()
+            queryset = self.get_itemtxs_related_manager().select_related('item_model').all()
         else:
             self.validate_item_transaction_qs(queryset)
         # todo: this needs to return an aggregate for consistency...
@@ -1386,6 +1392,8 @@ class EstimateModelAbstract(CreateUpdateMixIn,
         itemtxs_qs: ItemTransactionModelQuerySet
             ItemTransactionModelQuerySet to validate.
         """
+        ItemTransactionModel = lazy_loader.get_item_transaction_model()
+
         if not isinstance(itemtxs_qs, ItemTransactionModelQuerySet):
             if not all([
                 isinstance(i, ItemTransactionModel) for i in itemtxs_qs
@@ -1467,7 +1475,8 @@ class EstimateModelAbstract(CreateUpdateMixIn,
 
     def get_po_amount(self, po_qs: PurchaseOrderModelQuerySet = None) -> dict:
         if not po_qs:
-            po_qs = self.purchaseordermodel_set.all().active()
+            PurchaseOrderModel = lazy_loader.get_purchase_order_model()
+            po_qs = PurchaseOrderModel.objects.filter(ce_model=self).active()
         else:
             po_qs = self.validate_po_queryset(po_qs=po_qs)
 
@@ -1475,7 +1484,8 @@ class EstimateModelAbstract(CreateUpdateMixIn,
 
     def get_billed_amount(self, bill_qs: Optional[BillModelQuerySet] = None) -> dict:
         if not bill_qs:
-            bill_qs = self.billmodel_set.all().active()
+            BillModel = lazy_loader.get_bill_model()
+            bill_qs = BillModel.objects.filter(ce_model=self).active()
         else:
             bill_qs = self.validate_bill_queryset(bill_qs=bill_qs)
 
@@ -1489,7 +1499,8 @@ class EstimateModelAbstract(CreateUpdateMixIn,
 
     def get_invoiced_amount(self, invoice_qs: Optional[InvoiceModelQuerySet] = None) -> dict:
         if not invoice_qs:
-            invoice_qs = self.invoicemodel_set.all().active()
+            InvoiceModel = lazy_loader.get_invoice_model()
+            invoice_qs = InvoiceModel.objects.filter(ce_model=self).active()
         else:
             invoice_qs = self.validate_invoice_queryset(invoice_qs=invoice_qs)
 
@@ -1648,3 +1659,4 @@ class EstimateModel(EstimateModelAbstract):
 
     class Meta(EstimateModelAbstract.Meta):
         abstract = False
+        swappable = swapper.swappable_setting('django_ledger', 'EstimateModel')

@@ -13,7 +13,9 @@ from django.forms.models import BaseModelFormSet
 from django.utils.translation import gettext_lazy as _
 
 from django_ledger.io.roles import ASSET_CA_CASH, ASSET_CA_RECEIVABLES, LIABILITY_CL_DEFERRED_REVENUE
-from django_ledger.models import (AccountModel, CustomerModel, InvoiceModel, ItemTransactionModel, ItemModel)
+from django_ledger.models import AccountModel
+from django_ledger.models.invoice import InvoiceModelAbstract
+from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import DJANGO_LEDGER_FORM_INPUT_CLASSES
 
 
@@ -28,6 +30,7 @@ class InvoiceModelCreateForEstimateForm(ModelForm):
 
     def get_customer_queryset(self):
         if 'customer' in self.fields:
+            CustomerModel = lazy_loader.get_customer_model()
             customer_qs = CustomerModel.objects.for_entity(
                 entity_model=self.ENTITY_SLUG
             ).active()
@@ -50,7 +53,7 @@ class InvoiceModelCreateForEstimateForm(ModelForm):
             self.fields['unearned_account'].queryset = account_qs.filter(role__exact=LIABILITY_CL_DEFERRED_REVENUE)
 
     class Meta:
-        model = InvoiceModel
+        model = lazy_loader.get_invoice_model()
         fields = [
             'terms',
             'cash_account',
@@ -104,10 +107,10 @@ class BaseInvoiceModelUpdateForm(ModelForm):
         super().__init__(*args, **kwargs)
         self.ENTITY_SLUG = entity_slug
         self.USER_MODEL = user_model
-        self.INVOICE_MODEL: InvoiceModel = self.instance
+        self.INVOICE_MODEL: InvoiceModelAbstract = self.instance
 
     class Meta:
-        model = InvoiceModel
+        model = lazy_loader.get_invoice_model()
         fields = [
             'markdown_notes'
         ]
@@ -197,13 +200,13 @@ class InvoiceItemForm(ModelForm):
         cleaned_data = super(InvoiceItemForm, self).clean()
         quantity = cleaned_data['quantity']
         if self.instance.item_model_id:
-            item_model: ItemModel = self.instance.item_model
+            item_model = self.instance.item_model
             if item_model.for_inventory and quantity > item_model.inventory_received:
                 raise ValidationError(f'Cannot invoice more than {item_model.inventory_received} units available.')
         return cleaned_data
 
     class Meta:
-        model = ItemTransactionModel
+        model = lazy_loader.get_item_transaction_model()
         fields = [
             'item_model',
             'unit_cost',
@@ -231,9 +234,10 @@ class BaseInvoiceItemTransactionFormset(BaseModelFormSet):
                  **kwargs):
         super().__init__(*args, **kwargs)
         self.USER_MODEL = user_model
-        self.INVOICE_MODEL: InvoiceModel = invoice_model
+        self.INVOICE_MODEL: InvoiceModelAbstract = invoice_model
         self.ENTITY_SLUG = entity_slug
 
+        ItemModel = lazy_loader.get_item_model()
         items_qs = ItemModel.objects.for_invoice(
             entity_model=self.ENTITY_SLUG
         )
@@ -248,12 +252,14 @@ class BaseInvoiceItemTransactionFormset(BaseModelFormSet):
 
     def get_queryset(self):
         if not self.queryset:
+            ItemTransactionModel = lazy_loader.get_item_transaction_model()
             self.queryset = ItemTransactionModel.objects.for_invoice(
                 entity_model=self.ENTITY_SLUG,
                 invoice_pk=self.INVOICE_MODEL.uuid
             )
         else:
-            self.queryset = self.INVOICE_MODEL.itemtransactionmodel_set.all()
+            itemtxs_related_name = lazy_loader.get_item_transaction_model_related_name('invoice_model')
+            self.queryset = getattr(self.INVOICE_MODEL, itemtxs_related_name).all()
         return self.queryset
 
     def get_form_kwargs(self, index):
@@ -264,10 +270,10 @@ class BaseInvoiceItemTransactionFormset(BaseModelFormSet):
         }
 
 
-def get_invoice_itemtxs_formset_class(invoice_model: InvoiceModel):
+def get_invoice_itemtxs_formset_class(invoice_model: InvoiceModelAbstract):
     can_delete = invoice_model.can_edit_items()
     return modelformset_factory(
-        model=ItemTransactionModel,
+        model=lazy_loader.get_item_transaction_model(),
         form=InvoiceItemForm,
         formset=BaseInvoiceItemTransactionFormset,
         can_delete=can_delete,

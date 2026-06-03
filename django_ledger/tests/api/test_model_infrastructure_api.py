@@ -2,6 +2,8 @@
 Smoke-level API tests for Django Ledger model infrastructure helpers.
 """
 
+import swapper
+from django.conf import settings
 from django.test import SimpleTestCase
 
 from django_ledger.models.accounts import AccountModel
@@ -64,6 +66,114 @@ class ModelInfrastructureAPITest(SimpleTestCase):
         for getter, expected_model_class in loader_cases:
             with self.subTest(getter=getter.__name__):
                 self.assertIs(getter(), expected_model_class)
+
+    def test_customer_model_uses_swapper_default_setting(self):
+        setting_name = swapper.swappable_setting('django_ledger', 'CustomerModel')
+
+        self.assertEqual(setting_name, 'DJANGO_LEDGER_CUSTOMERMODEL_MODEL')
+        self.assertEqual(settings.DJANGO_LEDGER_CUSTOMERMODEL_MODEL, 'django_ledger.CustomerModel')
+        self.assertEqual(swapper.get_model_name('django_ledger', 'CustomerModel'), 'django_ledger.CustomerModel')
+        self.assertEqual(CustomerModel._meta.swappable, setting_name)
+        self.assertIs(lazy_loader.get_customer_model(), CustomerModel)
+
+    def test_vendor_model_uses_swapper_default_setting(self):
+        setting_name = swapper.swappable_setting('django_ledger', 'VendorModel')
+
+        self.assertEqual(setting_name, 'DJANGO_LEDGER_VENDORMODEL_MODEL')
+        self.assertEqual(settings.DJANGO_LEDGER_VENDORMODEL_MODEL, 'django_ledger.VendorModel')
+        self.assertEqual(swapper.get_model_name('django_ledger', 'VendorModel'), 'django_ledger.VendorModel')
+        self.assertEqual(VendorModel._meta.swappable, setting_name)
+        self.assertIs(lazy_loader.get_vendor_model(), VendorModel)
+
+    def test_bank_account_model_uses_swapper_default_setting(self):
+        setting_name = swapper.swappable_setting('django_ledger', 'BankAccountModel')
+
+        self.assertEqual(setting_name, 'DJANGO_LEDGER_BANKACCOUNTMODEL_MODEL')
+        self.assertEqual(settings.DJANGO_LEDGER_BANKACCOUNTMODEL_MODEL, 'django_ledger.BankAccountModel')
+        self.assertEqual(swapper.get_model_name('django_ledger', 'BankAccountModel'), 'django_ledger.BankAccountModel')
+        self.assertEqual(BankAccountModel._meta.swappable, setting_name)
+        self.assertIs(lazy_loader.get_bank_account_model(), BankAccountModel)
+
+    def test_item_model_uses_swapper_default_setting(self):
+        setting_name = swapper.swappable_setting('django_ledger', 'ItemModel')
+
+        self.assertEqual(setting_name, 'DJANGO_LEDGER_ITEMMODEL_MODEL')
+        self.assertEqual(settings.DJANGO_LEDGER_ITEMMODEL_MODEL, 'django_ledger.ItemModel')
+        self.assertEqual(swapper.get_model_name('django_ledger', 'ItemModel'), 'django_ledger.ItemModel')
+        self.assertEqual(ItemModel._meta.swappable, setting_name)
+        self.assertIs(lazy_loader.get_item_model(), ItemModel)
+
+    def test_item_transaction_model_uses_swapper_default_setting(self):
+        setting_name = swapper.swappable_setting('django_ledger', 'ItemTransactionModel')
+
+        self.assertEqual(setting_name, 'DJANGO_LEDGER_ITEMTRANSACTIONMODEL_MODEL')
+        self.assertEqual(settings.DJANGO_LEDGER_ITEMTRANSACTIONMODEL_MODEL, 'django_ledger.ItemTransactionModel')
+        self.assertEqual(
+            swapper.get_model_name('django_ledger', 'ItemTransactionModel'),
+            'django_ledger.ItemTransactionModel',
+        )
+        self.assertEqual(ItemTransactionModel._meta.swappable, setting_name)
+        self.assertIs(lazy_loader.get_item_transaction_model(), ItemTransactionModel)
+
+    def test_unit_of_measure_model_uses_swapper_default_setting(self):
+        setting_name = swapper.swappable_setting('django_ledger', 'UnitOfMeasureModel')
+
+        self.assertEqual(setting_name, 'DJANGO_LEDGER_UNITOFMEASUREMODEL_MODEL')
+        self.assertEqual(settings.DJANGO_LEDGER_UNITOFMEASUREMODEL_MODEL, 'django_ledger.UnitOfMeasureModel')
+        self.assertEqual(
+            swapper.get_model_name('django_ledger', 'UnitOfMeasureModel'),
+            'django_ledger.UnitOfMeasureModel',
+        )
+        self.assertEqual(UnitOfMeasureModel._meta.swappable, setting_name)
+        self.assertIs(lazy_loader.get_uom_model(), UnitOfMeasureModel)
+
+    def test_receipt_model_uses_swapper_default_setting(self):
+        setting_name = swapper.swappable_setting('django_ledger', 'ReceiptModel')
+
+        self.assertEqual(setting_name, 'DJANGO_LEDGER_RECEIPTMODEL_MODEL')
+        self.assertEqual(settings.DJANGO_LEDGER_RECEIPTMODEL_MODEL, 'django_ledger.ReceiptModel')
+        self.assertEqual(swapper.get_model_name('django_ledger', 'ReceiptModel'), 'django_ledger.ReceiptModel')
+        self.assertEqual(ReceiptModel._meta.swappable, setting_name)
+        self.assertIs(lazy_loader.get_receipt_model(), ReceiptModel)
+
+    def test_purchase_order_model_uses_swapper_default_setting(self):
+        setting_name = swapper.swappable_setting('django_ledger', 'PurchaseOrderModel')
+
+        self.assertEqual(setting_name, 'DJANGO_LEDGER_PURCHASEORDERMODEL_MODEL')
+        self.assertEqual(settings.DJANGO_LEDGER_PURCHASEORDERMODEL_MODEL, 'django_ledger.PurchaseOrderModel')
+        self.assertEqual(
+            swapper.get_model_name('django_ledger', 'PurchaseOrderModel'),
+            'django_ledger.PurchaseOrderModel',
+        )
+        self.assertEqual(PurchaseOrderModel._meta.swappable, setting_name)
+        self.assertIs(lazy_loader.get_purchase_order_model(), PurchaseOrderModel)
+
+    def test_invoice_model_uses_swapper_default_setting(self):
+        setting_name = swapper.swappable_setting('django_ledger', 'InvoiceModel')
+
+        self.assertEqual(setting_name, 'DJANGO_LEDGER_INVOICEMODEL_MODEL')
+        self.assertEqual(settings.DJANGO_LEDGER_INVOICEMODEL_MODEL, 'django_ledger.InvoiceModel')
+        self.assertEqual(swapper.get_model_name('django_ledger', 'InvoiceModel'), 'django_ledger.InvoiceModel')
+        self.assertEqual(InvoiceModel._meta.swappable, setting_name)
+        self.assertIs(lazy_loader.get_invoice_model(), InvoiceModel)
+
+    def test_bill_model_uses_swapper_default_setting(self):
+        setting_name = swapper.swappable_setting('django_ledger', 'BillModel')
+
+        self.assertEqual(setting_name, 'DJANGO_LEDGER_BILLMODEL_MODEL')
+        self.assertEqual(settings.DJANGO_LEDGER_BILLMODEL_MODEL, 'django_ledger.BillModel')
+        self.assertEqual(swapper.get_model_name('django_ledger', 'BillModel'), 'django_ledger.BillModel')
+        self.assertEqual(BillModel._meta.swappable, setting_name)
+        self.assertIs(lazy_loader.get_bill_model(), BillModel)
+
+    def test_estimate_model_uses_swapper_default_setting(self):
+        setting_name = swapper.swappable_setting('django_ledger', 'EstimateModel')
+
+        self.assertEqual(setting_name, 'DJANGO_LEDGER_ESTIMATEMODEL_MODEL')
+        self.assertEqual(settings.DJANGO_LEDGER_ESTIMATEMODEL_MODEL, 'django_ledger.EstimateModel')
+        self.assertEqual(swapper.get_model_name('django_ledger', 'EstimateModel'), 'django_ledger.EstimateModel')
+        self.assertEqual(EstimateModel._meta.swappable, setting_name)
+        self.assertIs(lazy_loader.get_estimate_model(), EstimateModel)
 
     def test_lazy_loader_resolves_report_classes(self):
         report_cases = (

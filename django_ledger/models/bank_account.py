@@ -11,6 +11,7 @@ import warnings
 from typing import Optional
 from uuid import UUID, uuid4
 
+import swapper
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -225,3 +226,4 @@ class BankAccountModel(BankAccountModelAbstract):
 
     class Meta(BankAccountModelAbstract.Meta):
         abstract = False
+        swappable = swapper.swappable_setting('django_ledger', 'BankAccountModel')

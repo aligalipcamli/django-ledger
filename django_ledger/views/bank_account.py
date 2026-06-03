@@ -14,7 +14,7 @@ from django.views.generic.detail import SingleObjectMixin
 
 from django_ledger.forms.bank_account import BankAccountCreateForm, BankAccountUpdateForm
 from django_ledger.models import EntityModel
-from django_ledger.models.bank_account import BankAccountModel
+from django_ledger.models.utils import lazy_loader
 from django_ledger.views.mixins import DjangoLedgerSecurityMixIn
 
 
@@ -24,7 +24,11 @@ class BankAccountModelModelBaseView(DjangoLedgerSecurityMixIn):
     def get_queryset(self):
         if self.queryset is None:
             entity_model: EntityModel = self.get_authorized_entity_instance()
-            self.queryset = entity_model.bankaccountmodel_set.select_related('account_model', 'entity_model')
+            BankAccountModel = lazy_loader.get_bank_account_model()
+            self.queryset = BankAccountModel.objects.for_entity(entity_model).select_related(
+                'account_model',
+                'entity_model',
+            )
         return super().get_queryset()
 
 
@@ -62,7 +66,7 @@ class BankAccountModelCreateView(BankAccountModelModelBaseView, CreateView):
                        })
 
     def form_valid(self, form):
-        bank_account_model: BankAccountModel = form.save(commit=False)
+        bank_account_model = form.save(commit=False)
         bank_account_model.configure(
             entity_slug=self.kwargs['entity_slug'],
             user_model=self.request.user,
@@ -115,7 +119,7 @@ class BaseBankAccountModelActionView(BankAccountModelModelBaseView,
         if not self.action_name:
             raise ImproperlyConfigured('View attribute action_name is required.')
         response = super(BaseBankAccountModelActionView, self).get(request, *args, **kwargs)
-        ba_model: BankAccountModel = self.get_object()
+        ba_model = self.get_object()
 
         try:
             getattr(ba_model, self.action_name)(commit=self.commit, **kwargs)

@@ -5,8 +5,9 @@ from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
 
 from django_ledger.io.roles import ASSET_CA_CASH, ASSET_CA_PREPAID, LIABILITY_CL_ACC_PAYABLE
-from django_ledger.models import (ItemModel, AccountModel, BillModel, ItemTransactionModel,
-                                  VendorModel, EntityUnitModel, EntityModel)
+from django_ledger.models import AccountModel, EntityUnitModel, EntityModel
+from django_ledger.models.bill import BillModelAbstract
+from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import DJANGO_LEDGER_FORM_INPUT_CLASSES
 
 
@@ -19,7 +20,8 @@ class BillModelCreateForm(ModelForm):
 
     def get_vendor_queryset(self):
         if 'vendor' in self.fields:
-            vendor_qs = self.ENTITY_MODEL.vendormodel_set.active()
+            VendorModel = lazy_loader.get_vendor_model()
+            vendor_qs = VendorModel.objects.for_entity(self.ENTITY_MODEL).active()
             self.fields['vendor'].queryset = vendor_qs
 
     def get_accounts_queryset(self):
@@ -35,7 +37,7 @@ class BillModelCreateForm(ModelForm):
             self.fields['unearned_account'].queryset = account_qs.filter(role__exact=LIABILITY_CL_ACC_PAYABLE)
 
     class Meta:
-        model = BillModel
+        model = lazy_loader.get_bill_model()
         fields = [
             'vendor',
             'xref',
@@ -101,7 +103,7 @@ class BaseBillModelUpdateForm(BillModelCreateForm):
         super().__init__(entity_model=entity_model, *args, **kwargs)
         self.ENTITY_MODEL = entity_model
         self.USER_MODEL = user_model
-        self.BILL_MODEL: BillModel = self.instance
+        self.BILL_MODEL: BillModelAbstract = self.instance
 
     def save(self, commit=True):
         if commit:
@@ -114,7 +116,7 @@ class BaseBillModelUpdateForm(BillModelCreateForm):
         super().save(commit=commit)
 
     class Meta:
-        model = BillModel
+        model = lazy_loader.get_bill_model()
         fields = [
             'markdown_notes'
         ]
@@ -216,7 +218,7 @@ class BillItemTransactionForm(ModelForm):
 
     def clean(self):
         cleaned_data = super(BillItemTransactionForm, self).clean()
-        itemtxs_model: ItemTransactionModel = self.instance
+        itemtxs_model = self.instance
         if itemtxs_model.po_model is not None:
             quantity = cleaned_data['quantity']
             if quantity > itemtxs_model.po_quantity:
@@ -224,7 +226,7 @@ class BillItemTransactionForm(ModelForm):
         return cleaned_data
 
     class Meta:
-        model = ItemTransactionModel
+        model = lazy_loader.get_item_transaction_model()
         fields = [
             'item_model',
             'unit_cost',
@@ -251,18 +253,20 @@ class BaseBillItemTransactionFormset(BaseModelFormSet):
 
     def __init__(self, *args,
                  entity_model: EntityModel,
-                 bill_model: BillModel,
+                 bill_model: BillModelAbstract,
                  **kwargs):
         super().__init__(*args, **kwargs)
         self.BILL_MODEL = bill_model
         self.ENTITY_MODEL = entity_model
-        self.queryset = self.BILL_MODEL.itemtransactionmodel_set.select_related(
+        itemtxs_related_name = lazy_loader.get_item_transaction_model_related_name('bill_model')
+        self.queryset = getattr(self.BILL_MODEL, itemtxs_related_name).select_related(
             'item_model',
             'po_model',
             'bill_model'
         ).order_by('-total_amount')
 
-        self.items_qs = self.ENTITY_MODEL.itemmodel_set.bills()
+        ItemModel = lazy_loader.get_item_model()
+        self.items_qs = ItemModel.objects.for_entity(self.ENTITY_MODEL).bills()
         self.entity_unit_qs = self.ENTITY_MODEL.entityunitmodel_set.all()
 
         for form in self.forms:
@@ -275,15 +279,15 @@ class BaseBillItemTransactionFormset(BaseModelFormSet):
                 form.fields['unit_cost'].disabled = True
                 form.fields['entity_unit'].disabled = True
 
-            instance: ItemTransactionModel = form.instance
+            instance = form.instance
             if instance.po_model_id:
                 form.fields['item_model'].disabled = True
                 form.fields['entity_unit'].disabled = True
 
 
-def get_bill_itemtxs_formset_class(bill_model: BillModel):
+def get_bill_itemtxs_formset_class(bill_model: BillModelAbstract):
     BillItemTransactionFormset = modelformset_factory(
-        model=ItemTransactionModel,
+        model=lazy_loader.get_item_transaction_model(),
         form=BillItemTransactionForm,
         formset=BaseBillItemTransactionFormset,
         can_delete=True,

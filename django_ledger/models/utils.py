@@ -3,6 +3,7 @@ Django Ledger created by Miguel Sanda <msanda@arrobalytics.com>.
 Copyright© EDMA Group Inc licensed under the GPLv3 Agreement.
 """
 
+import swapper
 from django.apps import apps
 
 
@@ -112,7 +113,7 @@ class LazyLoader:
         return self.app_config.get_model(self.ENTITY_STATE_MODEL)
 
     def get_bank_account_model(self):
-        return self.app_config.get_model(self.BANK_ACCOUNT_MODEL)
+        return swapper.load_model('django_ledger', 'BankAccountModel')
 
     def get_account_model(self):
         return self.app_config.get_model(self.ACCOUNT_MODEL)
@@ -127,7 +128,7 @@ class LazyLoader:
         return self.app_config.get_model(self.STAGED_TRANSACTION_MODEL)
 
     def get_purchase_order_model(self):
-        return self.app_config.get_model(self.PURCHASE_ORDER_MODEL)
+        return swapper.load_model('django_ledger', 'PurchaseOrderModel')
 
     def get_ledger_model(self):
         self.get_entity_unit_model()
@@ -137,31 +138,39 @@ class LazyLoader:
         return self.app_config.get_model(self.JE_MODEL)
 
     def get_item_model(self):
-        return self.app_config.get_model(self.ITEM_MODEL)
+        return swapper.load_model('django_ledger', 'ItemModel')
 
     def get_item_transaction_model(self):
-        return self.app_config.get_model(self.ITEM_TRANSACTION_MODEL)
+        return swapper.load_model('django_ledger', 'ItemTransactionModel')
+
+    def get_item_transaction_model_related_name(self, field_name):
+        ItemTransactionModel = self.get_item_transaction_model()
+        return ItemTransactionModel._meta.get_field(field_name).remote_field.get_accessor_name()
+
+    def get_item_transaction_model_related_query_name(self, field_name):
+        ItemTransactionModel = self.get_item_transaction_model()
+        return ItemTransactionModel._meta.get_field(field_name).related_query_name()
 
     def get_receipt_model(self):
-        return self.app_config.get_model(self.RECEIPT_MODEL)
+        return swapper.load_model('django_ledger', 'ReceiptModel')
 
     def get_customer_model(self):
-        return self.app_config.get_model(self.CUSTOMER_MODEL)
+        return swapper.load_model('django_ledger', 'CustomerModel')
 
     def get_bill_model(self):
-        return self.app_config.get_model(self.BILL_MODEL)
+        return swapper.load_model('django_ledger', 'BillModel')
 
     def get_invoice_model(self):
-        return self.app_config.get_model(self.INVOICE_MODEL)
+        return swapper.load_model('django_ledger', 'InvoiceModel')
 
     def get_uom_model(self):
-        return self.app_config.get_model(self.UOM_MODEL)
+        return swapper.load_model('django_ledger', 'UnitOfMeasureModel')
 
     def get_vendor_model(self):
-        return self.app_config.get_model(self.VENDOR_MODEL)
+        return swapper.load_model('django_ledger', 'VendorModel')
 
     def get_estimate_model(self):
-        return self.app_config.get_model(self.ESTIMATE_MODEL)
+        return swapper.load_model('django_ledger', 'EstimateModel')
 
     def get_closing_entry_model(self):
         return self.app_config.get_model(self.CLOSING_ENTRY_MODEL)

@@ -7,8 +7,8 @@ from django_ledger.io.roles import (
     LIABILITY_CL_CREDIT_LINE,
     LIABILITY_LTL_MORTGAGE_PAYABLE,
 )
-from django_ledger.models import BankAccountModel
 from django_ledger.models.accounts import AccountModel
+from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import DJANGO_LEDGER_FORM_INPUT_CLASSES
 
 
@@ -42,13 +42,13 @@ class BankAccountCreateForm(ModelForm):
             raise ValidationError('Must select a bank account.')
 
         # catching unique database constraint...
-        if BankAccountModel.objects.filter(
+        if self._meta.model.objects.filter(
             account_model=account_model, routing_number__exact=routing_number, account_number__exact=account_number
         ).exists():
             raise ValidationError('Duplicate bank account model.')
 
     class Meta:
-        model = BankAccountModel
+        model = lazy_loader.get_bank_account_model()
         fields = [
             'name',
             'account_type',
@@ -91,7 +91,7 @@ class BankAccountCreateForm(ModelForm):
 
 class BankAccountUpdateForm(BankAccountCreateForm):
     class Meta:
-        model = BankAccountModel
+        model = lazy_loader.get_bank_account_model()
         fields = ['name', 'account_type', 'account_model', 'active']
         widgets = {
             'name': TextInput(
@@ -102,15 +102,15 @@ class BankAccountUpdateForm(BankAccountCreateForm):
         }
 
     def clean(self):
-        cash_account = self.cleaned_data['account_model']
+        account_model = self.cleaned_data['account_model']
 
-        if not cash_account:
+        if not account_model:
             raise ValidationError('Must select a bank account.')
 
         # catching unique database constraint...
-        if 'cash_account' in self.changed_data:
-            if BankAccountModel.objects.filter(
-                cash_account=cash_account,
+        if 'account_model' in self.changed_data:
+            if self._meta.model.objects.filter(
+                account_model=account_model,
                 routing_number__exact=self.instance.routing_number,
                 account_number__exact=self.instance.account_number,
             ).exists():

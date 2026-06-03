@@ -36,7 +36,6 @@ from django_ledger.models import (
     AccountModel,
     BillModel,
     EntityModel,
-    InvoiceModel,
     LedgerModel,
 )
 from django_ledger.models.deprecations import deprecated_entity_slug_behavior
@@ -338,15 +337,13 @@ class TransactionModelQuerySet(QuerySet):
             return self.filter(journal_entry__ledger__billmodel=bill_model)
         return self.filter(journal_entry__ledger__billmodel__uuid__exact=bill_model)
 
-    def for_invoice(
-        self, invoice_model: Union[InvoiceModel, str, UUID]
-    ) -> 'TransactionModelQuerySet':
+    def for_invoice(self, invoice_model: Union[models.Model, str, UUID]) -> 'TransactionModelQuerySet':
         """
         Filters transactions for a specific invoice under a given entity.
 
         Parameters
         ----------
-        invoice_model : Union[InvoiceModel, str, UUID]
+        invoice_model : Union[Model, str, UUID]
             The invoice model or its UUID to filter by.
 
         Returns
@@ -354,10 +351,13 @@ class TransactionModelQuerySet(QuerySet):
         TransactionModelQuerySet
             A queryset containing transactions related to the specified invoice.
         """
+        InvoiceModel = lazy_loader.get_invoice_model()
         if isinstance(invoice_model, InvoiceModel):
-            return self.filter(journal_entry__ledger__invoicemodel=invoice_model)
+            return self.filter(journal_entry__ledger_id=invoice_model.ledger_id)
         return self.filter(
-            journal_entry__ledger__invoicemodel__uuid__exact=invoice_model
+            journal_entry__ledger_id__in=InvoiceModel.objects.filter(
+                uuid__exact=invoice_model,
+            ).values('ledger_id')
         )
 
     def with_annotated_details(self) -> 'TransactionModelQuerySet':

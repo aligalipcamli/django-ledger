@@ -20,9 +20,10 @@ from django.views.generic import (
     YearArchiveView,
 )
 
-from django_ledger.models import CustomerModel, EntityModel, LedgerModel, VendorModel
+from django_ledger.models import EntityModel, LedgerModel
 from django_ledger.models.receipt import ReceiptModel, ReceiptModelQuerySet
 from django_ledger.models.transactions import TransactionModel
+from django_ledger.models.utils import lazy_loader
 from django_ledger.views.mixins import (
     DjangoLedgerSecurityMixIn,
     QuarterlyReportMixIn,
@@ -42,6 +43,7 @@ class BaseReceiptModelViewMixIn(DjangoLedgerSecurityMixIn):
 
             receipt_type = self.kwargs.get('receipt_type')
             if receipt_type:
+                ReceiptModel = lazy_loader.get_receipt_model()
                 qs = qs.filter(receipt_type__exact=receipt_type)
                 if receipt_type in [
                     ReceiptModel.SALES_RECEIPT,
@@ -94,10 +96,12 @@ class ReceiptModelListView(BaseReceiptModelViewMixIn, ArchiveIndexView):
         receipt_type = self.kwargs.get('receipt_type')
 
         if receipt_type:
+            ReceiptModel = lazy_loader.get_receipt_model()
             context['title'] = ReceiptModel.RECEIPT_TYPES_MAP[receipt_type]
 
         vendor_pk = self.kwargs.get('vendor_pk')
         if vendor_pk:
+            VendorModel = lazy_loader.get_vendor_model()
             vendor = VendorModel.objects.for_entity(
                 entity_model=self.AUTHORIZED_ENTITY_MODEL
             ).get(uuid__exact=vendor_pk)
@@ -105,6 +109,7 @@ class ReceiptModelListView(BaseReceiptModelViewMixIn, ArchiveIndexView):
         customer_pk = self.kwargs.get('customer_pk')
 
         if customer_pk:
+            CustomerModel = lazy_loader.get_customer_model()
             customer = CustomerModel.objects.for_entity(
                 entity_model=self.AUTHORIZED_ENTITY_MODEL
             ).get(uuid__exact=customer_pk)
@@ -195,10 +200,11 @@ class VendorReceiptReportListView(ReceiptModelListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         vendor_pk = self.kwargs['vendor_pk']
+        VendorModel = lazy_loader.get_vendor_model()
         vendor_model_qs = VendorModel.objects.for_entity(
             entity_model=self.AUTHORIZED_ENTITY_MODEL
         )
-        vendor_model: VendorModel = get_object_or_404(
+        vendor_model = get_object_or_404(
             vendor_model_qs, uuid__exact=vendor_pk
         )
         context['vendor_model'] = vendor_model
@@ -228,6 +234,7 @@ class CustomerReceiptReportListView(ReceiptModelListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        CustomerModel = lazy_loader.get_customer_model()
         customer_model_qs = CustomerModel.objects.for_entity(
             entity_model=self.AUTHORIZED_ENTITY_MODEL
         )

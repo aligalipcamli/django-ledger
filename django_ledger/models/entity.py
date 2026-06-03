@@ -48,7 +48,7 @@ from django_ledger.models.accounts import (
     AccountModel,
     AccountModelQuerySet,
 )
-from django_ledger.models.bank_account import BankAccountModel, BankAccountModelQuerySet
+from django_ledger.models.bank_account import BankAccountModelAbstract, BankAccountModelQuerySet
 from django_ledger.models.chart_of_accounts import (
     ChartOfAccountModel,
     ChartOfAccountModelQuerySet,
@@ -56,10 +56,10 @@ from django_ledger.models.chart_of_accounts import (
 from django_ledger.models.coa_default import CHART_OF_ACCOUNTS_ROOT_MAP
 from django_ledger.models.customer import CustomerModel, CustomerModelQueryset
 from django_ledger.models.items import (
-    ItemModel,
+    ItemModelAbstract,
     ItemModelQuerySet,
     ItemTransactionModelQuerySet,
-    UnitOfMeasureModel,
+    UnitOfMeasureModelAbstract,
     UnitOfMeasureModelQuerySet,
 )
 from django_ledger.models.ledger import LedgerModel
@@ -1586,7 +1586,8 @@ class EntityModelAbstract(
         VendorModelQuerySet
             The EntityModel instance VendorModelQuerySet with applied filters.
         """
-        vendor_qs = self.vendormodel_set.all().select_related('entity_model')
+        VendorModel = lazy_loader.get_vendor_model()
+        vendor_qs = VendorModel.objects.for_entity(self)
         if active:
             vendor_qs = vendor_qs.active()
         return vendor_qs
@@ -1614,6 +1615,7 @@ class EntityModelAbstract(
         -------
         VendorModel
         """
+        VendorModel = lazy_loader.get_vendor_model()
         vendor_model = VendorModel(entity_model=self, **vendor_model_kwargs)
         vendor_model.clean()
         if commit:
@@ -1635,7 +1637,8 @@ class EntityModelAbstract(
         CustomerModelQueryset
             The EntityModel instance CustomerModelQueryset with applied filters.
         """
-        customer_model_qs = self.customermodel_set.all().select_related('entity_model')
+        CustomerModel = lazy_loader.get_customer_model()
+        customer_model_qs = CustomerModel.objects.for_entity(self)
         if active:
             customer_model_qs = customer_model_qs.active()
         return customer_model_qs
@@ -1649,6 +1652,9 @@ class EntityModelAbstract(
         return customer_model_qs.get(uuid__exact=customer_uuid)
 
     def validate_customer(self, customer_model: CustomerModel):
+        CustomerModel = lazy_loader.get_customer_model()
+        if not isinstance(customer_model, CustomerModel):
+            raise EntityModelValidationError('CustomerModel must be an instance of CustomerModel.')
         if customer_model.entity_model_id != self.uuid:
             raise EntityModelValidationError(f'Invalid CustomerModel {self.uuid} for EntityModel {self.uuid}...')
 
@@ -1667,6 +1673,7 @@ class EntityModelAbstract(
         -------
         CustomerModel
         """
+        CustomerModel = lazy_loader.get_customer_model()
         customer_model = CustomerModel(entity_model=self, **customer_model_kwargs)
         customer_model.clean()
         if commit:
@@ -1743,6 +1750,7 @@ class EntityModelAbstract(
             The newly created BillModel in DRAFT state.
         """
         BillModel = lazy_loader.get_bill_model()
+        VendorModel = lazy_loader.get_vendor_model()
 
         if isinstance(vendor_model, VendorModel):
             if not vendor_model.entity_model_id == self.uuid:
@@ -1792,7 +1800,8 @@ class EntityModelAbstract(
         return bill_model
 
     def get_items_for_bill(self) -> ItemModelQuerySet:
-        item_model_qs: ItemModelQuerySet = self.itemmodel_set.all()
+        ItemModel = lazy_loader.get_item_model()
+        item_model_qs: ItemModelQuerySet = ItemModel.objects.for_entity(self)
         return item_model_qs.select_related('uom', 'entity').bills()
 
     # ### INVOICE MANAGEMENT ####
@@ -1857,6 +1866,7 @@ class EntityModelAbstract(
             The newly created InvoiceModel in DRAFT state.
         """
         InvoiceModel = lazy_loader.get_invoice_model()
+        CustomerModel = lazy_loader.get_customer_model()
 
         if isinstance(customer_model, CustomerModel):
             if not customer_model.entity_model_id == self.uuid:
@@ -1911,7 +1921,8 @@ class EntityModelAbstract(
         -------
         PurchaseOrderModelQuerySet
         """
-        return self.purchaseordermodel_set.all().select_related('entity')
+        PurchaseOrderModel = lazy_loader.get_purchase_order_model()
+        return PurchaseOrderModel.objects.for_entity(self).select_related('entity')
 
     def create_purchase_order(
         self,
@@ -1959,7 +1970,8 @@ class EntityModelAbstract(
         -------
         EstimateModelQuerySet
         """
-        return self.estimatemodel_set.all().select_related('entity')
+        EstimateModel = lazy_loader.get_estimate_model()
+        return EstimateModel.objects.for_entity(self).select_related('entity')
 
     def create_estimate(
         self,
@@ -1991,6 +2003,8 @@ class EntityModelAbstract(
         PurchaseOrderModel
             The newly created PurchaseOrderModel in DRAFT state.
         """
+        CustomerModel = lazy_loader.get_customer_model()
+
         if isinstance(customer_model, CustomerModel):
             self.validate_customer(customer_model)
         elif isinstance(customer_model, str):
@@ -2024,7 +2038,8 @@ class EntityModelAbstract(
         -------
         BankAccountModelQuerySet
         """
-        bank_account_qs = self.bankaccountmodel_set.all().select_related('entity_model')
+        BankAccountModel = lazy_loader.get_bank_account_model()
+        bank_account_qs = BankAccountModel.objects.for_entity(self).select_related('entity_model')
         if active:
             bank_account_qs = bank_account_qs.active()
         return bank_account_qs
@@ -2075,6 +2090,8 @@ class EntityModelAbstract(
 
         if bank_account_model_kwargs is None:
             bank_account_model_kwargs = dict()
+
+        BankAccountModel = lazy_loader.get_bank_account_model()
 
         if account_type not in BankAccountModel.VALID_ACCOUNT_TYPES:
             raise EntityModelValidationError(
@@ -2148,9 +2165,16 @@ class EntityModelAbstract(
         -------
         UnitOfMeasureModelQuerySet
         """
-        return self.unitofmeasuremodel_set.all().select_related('entity')
+        UnitOfMeasureModel = lazy_loader.get_uom_model()
+        return UnitOfMeasureModel.objects.for_entity(self).select_related('entity')
 
-    def create_uom(self, name: str, unit_abbr: str, active: bool = True, commit: bool = True) -> UnitOfMeasureModel:
+    def create_uom(
+            self,
+            name: str,
+            unit_abbr: str,
+            active: bool = True,
+            commit: bool = True
+    ) -> UnitOfMeasureModelAbstract:
         """
         Creates a new Unit of Measure Model associated with the EntityModel instance
 
@@ -2169,6 +2193,7 @@ class EntityModelAbstract(
         -------
         UnitOfMeasureModel
         """
+        UnitOfMeasureModel = lazy_loader.get_uom_model()
         uom_model = UnitOfMeasureModel(name=name, unit_abbr=unit_abbr, is_active=active, entity=self)
         uom_model.clean()
         uom_model.clean_fields()
@@ -2191,7 +2216,8 @@ class EntityModelAbstract(
         -------
         ItemModelQuerySet
         """
-        qs = self.itemmodel_set.all().select_related(
+        ItemModel = lazy_loader.get_item_model()
+        qs = ItemModel.objects.for_entity(self).select_related(
             'uom',
             'entity',
             'inventory_account',
@@ -2225,10 +2251,10 @@ class EntityModelAbstract(
         self,
         name: str,
         item_type: str,
-        uom_model: Union[UUID, UnitOfMeasureModel],
+        uom_model: Union[UUID, UnitOfMeasureModelAbstract],
         coa_model: Optional[Union[ChartOfAccountModel, UUID, str]] = None,
         commit: bool = True,
-    ) -> ItemModel:
+    ) -> ItemModelAbstract:
         """
         Creates a new items of type PRODUCT.
 
@@ -2249,8 +2275,10 @@ class EntityModelAbstract(
         ItemModel
             The created Product.
         """
+        ItemModel = lazy_loader.get_item_model()
+        UnitOfMeasureModel = lazy_loader.get_uom_model()
         if isinstance(uom_model, UUID):
-            uom_model = self.unitofmeasuremodel_set.select_related('entity').get(uuid__exact=uom_model)
+            uom_model = UnitOfMeasureModel.objects.for_entity(self).select_related('entity').get(uuid__exact=uom_model)
         elif isinstance(uom_model, UnitOfMeasureModel):
             if uom_model.entity_id != self.uuid:
                 raise EntityModelValidationError(f'Invalid UnitOfMeasureModel for entity {self.slug}...')
@@ -2304,10 +2332,10 @@ class EntityModelAbstract(
     def create_item_service(
         self,
         name: str,
-        uom_model: Union[UUID, UnitOfMeasureModel],
+        uom_model: Union[UUID, UnitOfMeasureModelAbstract],
         coa_model: Optional[Union[ChartOfAccountModel, UUID, str]] = None,
         commit: bool = True,
-    ) -> ItemModel:
+    ) -> ItemModelAbstract:
         """
         Creates a new items of type SERVICE.
 
@@ -2328,8 +2356,10 @@ class EntityModelAbstract(
             The created Service.
         """
 
+        ItemModel = lazy_loader.get_item_model()
+        UnitOfMeasureModel = lazy_loader.get_uom_model()
         if isinstance(uom_model, UUID):
-            uom_model = self.unitofmeasuremodel_set.select_related('entity').get(uuid__exact=uom_model)
+            uom_model = UnitOfMeasureModel.objects.for_entity(self).select_related('entity').get(uuid__exact=uom_model)
         elif isinstance(uom_model, UnitOfMeasureModel):
             if uom_model.entity_id != self.uuid:
                 raise EntityModelValidationError(f'Invalid UnitOfMeasureModel for entity {self.slug}...')
@@ -2379,11 +2409,11 @@ class EntityModelAbstract(
         self,
         name: str,
         expense_type: str,
-        uom_model: Union[UUID, UnitOfMeasureModel],
+        uom_model: Union[UUID, UnitOfMeasureModelAbstract],
         expense_account: Optional[Union[UUID, AccountModel]] = None,
         coa_model: Optional[Union[ChartOfAccountModel, UUID, str]] = None,
         commit: bool = True,
-    ) -> ItemModel:
+    ) -> ItemModelAbstract:
         """
         Creates a new items of type EXPENSE.
 
@@ -2407,8 +2437,10 @@ class EntityModelAbstract(
         -------
         ItemModel
         """
+        ItemModel = lazy_loader.get_item_model()
+        UnitOfMeasureModel = lazy_loader.get_uom_model()
         if isinstance(uom_model, UUID):
-            uom_model = self.unitofmeasuremodel_set.select_related('entity').get(uuid__exact=uom_model)
+            uom_model = UnitOfMeasureModel.objects.for_entity(self).select_related('entity').get(uuid__exact=uom_model)
         elif isinstance(uom_model, UnitOfMeasureModel):
             if uom_model.entity_id != self.uuid:
                 raise EntityModelValidationError(f'Invalid UnitOfMeasureModel for entity {self.slug}...')
@@ -2478,7 +2510,7 @@ class EntityModelAbstract(
     def create_item_inventory(
         self,
         name: str,
-        uom_model: Union[UUID, UnitOfMeasureModel],
+        uom_model: Union[UUID, UnitOfMeasureModelAbstract],
         item_type: str,
         inventory_account: Optional[Union[UUID, AccountModel]] = None,
         coa_model: Optional[Union[ChartOfAccountModel, UUID, str]] = None,
@@ -2508,8 +2540,10 @@ class EntityModelAbstract(
         -------
         ItemModel
         """
+        ItemModel = lazy_loader.get_item_model()
+        UnitOfMeasureModel = lazy_loader.get_uom_model()
         if isinstance(uom_model, UUID):
-            uom_model = self.unitofmeasuremodel_set.select_related('entity').get(uuid__exact=uom_model)
+            uom_model = UnitOfMeasureModel.objects.for_entity(self).select_related('entity').get(uuid__exact=uom_model)
         elif isinstance(uom_model, UnitOfMeasureModel):
             if uom_model.entity_id != self.uuid:
                 raise EntityModelValidationError(f'Invalid UnitOfMeasureModel for entity {self.slug}...')
@@ -2673,6 +2707,7 @@ class EntityModelAbstract(
             updated_items.append(item_model)
 
         if commit:
+            ItemModel = lazy_loader.get_item_model()
             ItemModel.objects.bulk_update(
                 updated_items,
                 fields=['inventory_received', 'inventory_received_value', 'updated'],
@@ -2705,7 +2740,8 @@ class EntityModelAbstract(
 
         """
         if not item_qs:
-            recorded_qs = self.itemmodel_set.all().inventory_all()
+            ItemModel = lazy_loader.get_item_model()
+            recorded_qs = ItemModel.objects.for_entity(self).inventory_all()
         else:
             self.validate_item_qs(item_qs)
             recorded_qs = item_qs
@@ -2723,7 +2759,7 @@ class EntityModelAbstract(
     def deposit_capital(
         self,
         amount: Union[Decimal, float],
-        cash_account: Optional[Union[AccountModel, BankAccountModel]] = None,
+        cash_account: Optional[Union[AccountModel, BankAccountModelAbstract]] = None,
         capital_account: Optional[AccountModel] = None,
         description: Optional[str] = None,
         coa_model: Optional[Union[ChartOfAccountModel, UUID, str]] = None,
@@ -2752,6 +2788,7 @@ class EntityModelAbstract(
                 len(account_model_qs)
 
         if cash_account:
+            BankAccountModel = lazy_loader.get_bank_account_model()
             if isinstance(cash_account, BankAccountModel):
                 cash_account = cash_account.account_model
             self.validate_account_model_for_coa(account_model=cash_account, coa_model=coa_model)

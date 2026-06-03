@@ -24,6 +24,7 @@ from string import ascii_lowercase, digits
 from typing import Dict
 from uuid import uuid4, UUID
 
+import swapper
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.validators import MinValueValidator
 from django.db import models, transaction, IntegrityError
@@ -210,7 +211,7 @@ class ItemModelQuerySet(QuerySet):
                     Q(is_product_or_service=True) &
                     Q(for_inventory=True)
             ) |
-            Q(item_role=ItemModel.ITEM_ROLE_PRODUCT)
+            Q(item_role=self.model.ITEM_ROLE_PRODUCT)
         )
 
     def services(self) -> 'ItemModelQuerySet':
@@ -227,7 +228,7 @@ class ItemModelQuerySet(QuerySet):
                     Q(is_product_or_service=True) &
                     Q(for_inventory=False)
             ) |
-            Q(item_role=ItemModel.ITEM_ROLE_SERVICE)
+            Q(item_role=self.model.ITEM_ROLE_SERVICE)
         )
 
     def expenses(self) -> 'ItemModelQuerySet':
@@ -243,7 +244,7 @@ class ItemModelQuerySet(QuerySet):
             (
                     Q(is_product_or_service=False) &
                     Q(for_inventory=False)
-            ) | Q(item_role=ItemModel.ITEM_ROLE_EXPENSE)
+            ) | Q(item_role=self.model.ITEM_ROLE_EXPENSE)
         )
 
     def inventory_wip(self) -> 'ItemModelQuerySet':
@@ -260,7 +261,7 @@ class ItemModelQuerySet(QuerySet):
             (
                     Q(is_product_or_service=False) &
                     Q(for_inventory=True)
-            ) | Q(item_role=ItemModel.ITEM_ROLE_INVENTORY)
+            ) | Q(item_role=self.model.ITEM_ROLE_INVENTORY)
         )
 
     def inventory_all(self) -> 'ItemModelQuerySet':
@@ -279,14 +280,14 @@ class ItemModelQuerySet(QuerySet):
                     (
                             Q(is_product_or_service=False) &
                             Q(for_inventory=True)
-                    ) | Q(item_role=ItemModel.ITEM_ROLE_INVENTORY)
+                    ) | Q(item_role=self.model.ITEM_ROLE_INVENTORY)
             ) |
             (
                     (
                             Q(is_product_or_service=True) &
                             Q(for_inventory=True)
                     ) |
-                    Q(item_role=ItemModel.ITEM_ROLE_PRODUCT)
+                    Q(item_role=self.model.ITEM_ROLE_PRODUCT)
 
             )
         )
@@ -583,7 +584,7 @@ class ItemModelAbstract(CreateUpdateMixIn):
     item_role = models.CharField(max_length=10, choices=ITEM_ROLE_CHOICES, null=True, blank=True)
     item_type = models.CharField(max_length=1, choices=ITEM_TYPE_CHOICES, null=True, blank=True)
 
-    uom = models.ForeignKey('django_ledger.UnitOfMeasureModel',
+    uom = models.ForeignKey(swapper.get_model_name('django_ledger', 'UnitOfMeasureModel'),
                             verbose_name=_('Unit of Measure'),
                             on_delete=models.RESTRICT)
 
@@ -950,7 +951,7 @@ class ItemTransactionModelQuerySet(QuerySet):
         ItemTransactionModelQuerySet
             A queryset containing only the items with the status 'received'.
         """
-        return self.filter(po_item_status=ItemTransactionModel.STATUS_RECEIVED)
+        return self.filter(po_item_status=self.model.STATUS_RECEIVED)
 
     def in_transit(self) -> 'ItemTransactionModelQuerySet':
         """
@@ -961,7 +962,7 @@ class ItemTransactionModelQuerySet(QuerySet):
         ItemTransactionModelQuerySet
             A queryset containing items whose status is "in transit".
         """
-        return self.filter(po_item_status=ItemTransactionModel.STATUS_IN_TRANSIT)
+        return self.filter(po_item_status=self.model.STATUS_IN_TRANSIT)
 
     def is_ordered(self) -> 'ItemTransactionModelQuerySet':
         """
@@ -972,7 +973,7 @@ class ItemTransactionModelQuerySet(QuerySet):
         ItemTransactionModelQuerySet
             A filtered queryset containing items with the status "ORDERED".
         """
-        return self.filter(po_item_status=ItemTransactionModel.STATUS_ORDERED)
+        return self.filter(po_item_status=self.model.STATUS_ORDERED)
 
     def is_orphan(self) -> 'ItemTransactionModelQuerySet':
         """
@@ -1301,7 +1302,7 @@ class ItemTransactionModelManager(Manager):
                     (
                             Q(bill_model__isnull=False) &
                             Q(po_model__po_status=PurchaseOrderModel.PO_STATUS_APPROVED) &
-                            Q(po_item_status__exact=ItemTransactionModel.STATUS_RECEIVED)
+                            Q(po_item_status__exact=self.model.STATUS_RECEIVED)
                     ) |
 
                     # invoiced inventory...
@@ -1346,9 +1347,9 @@ class ItemTransactionModelManager(Manager):
             Q(item_model__for_inventory=True) &
             Q(bill_model__isnull=False) &
             Q(po_item_status__in=[
-                ItemTransactionModel.STATUS_ORDERED,
-                ItemTransactionModel.STATUS_IN_TRANSIT,
-                ItemTransactionModel.STATUS_RECEIVED,
+                self.model.STATUS_ORDERED,
+                self.model.STATUS_IN_TRANSIT,
+                self.model.STATUS_RECEIVED,
             ])
         )
 
@@ -1366,17 +1367,17 @@ class ItemTransactionModelManager(Manager):
     @deprecated_entity_slug_behavior
     def inventory_pipeline_ordered(self, entity_model: 'EntityModel | str | UUID' = None, **kwargs):
         qs = self.inventory_pipeline(entity_model=entity_model)
-        return qs.filter(po_item_status=ItemTransactionModel.STATUS_ORDERED)
+        return qs.filter(po_item_status=self.model.STATUS_ORDERED)
 
     @deprecated_entity_slug_behavior
     def inventory_pipeline_in_transit(self, entity_model: 'EntityModel | str | UUID' = None, **kwargs):
         qs = self.inventory_pipeline(entity_model=entity_model)
-        return qs.filter(po_item_status=ItemTransactionModel.STATUS_IN_TRANSIT)
+        return qs.filter(po_item_status=self.model.STATUS_IN_TRANSIT)
 
     @deprecated_entity_slug_behavior
     def inventory_pipeline_received(self, entity_model: 'EntityModel | str | UUID' = None, **kwargs):
         qs = self.inventory_pipeline(entity_model=entity_model)
-        return qs.filter(po_item_status=ItemTransactionModel.STATUS_RECEIVED)
+        return qs.filter(po_item_status=self.model.STATUS_RECEIVED)
 
     @deprecated_entity_slug_behavior
     def inventory_invoiced(self, entity_model: 'EntityModel | str | UUID' = None, **kwargs):
@@ -1410,15 +1411,15 @@ class ItemTransactionModelAbstract(CreateUpdateMixIn):
                                     blank=True,
                                     null=True,
                                     verbose_name=_('Associated Entity Unit'))
-    item_model = models.ForeignKey('django_ledger.ItemModel',
+    item_model = models.ForeignKey(swapper.get_model_name('django_ledger', 'ItemModel'),
                                    on_delete=models.RESTRICT,
                                    verbose_name=_('Item Model'))
-    bill_model = models.ForeignKey('django_ledger.BillModel',
+    bill_model = models.ForeignKey(swapper.get_model_name('django_ledger', 'BillModel'),
                                    on_delete=models.RESTRICT,
                                    null=True,
                                    blank=True,
                                    verbose_name=_('Bill Model'))
-    invoice_model = models.ForeignKey('django_ledger.InvoiceModel',
+    invoice_model = models.ForeignKey(swapper.get_model_name('django_ledger', 'InvoiceModel'),
                                       on_delete=models.RESTRICT,
                                       null=True,
                                       blank=True,
@@ -1442,7 +1443,7 @@ class ItemTransactionModelAbstract(CreateUpdateMixIn):
                                        validators=[MinValueValidator(limit_value=0.0)])
 
     # Purchase Order fields...
-    po_model = models.ForeignKey('django_ledger.PurchaseOrderModel',
+    po_model = models.ForeignKey(swapper.get_model_name('django_ledger', 'PurchaseOrderModel'),
                                  on_delete=models.RESTRICT,
                                  null=True,
                                  blank=True,
@@ -1472,7 +1473,7 @@ class ItemTransactionModelAbstract(CreateUpdateMixIn):
                                       verbose_name=_('PO Item Status'))
 
     # Estimate/Contract fields...
-    ce_model = models.ForeignKey('django_ledger.EstimateModel',
+    ce_model = models.ForeignKey(swapper.get_model_name('django_ledger', 'EstimateModel'),
                                  null=True,
                                  blank=True,
                                  verbose_name=_('Customer Estimate'),
@@ -1773,6 +1774,7 @@ class UnitOfMeasureModel(UnitOfMeasureModelAbstract):
 
     class Meta(UnitOfMeasureModelAbstract.Meta):
         abstract = False
+        swappable = swapper.swappable_setting('django_ledger', 'UnitOfMeasureModel')
 
 
 class ItemTransactionModel(ItemTransactionModelAbstract):
@@ -1782,6 +1784,7 @@ class ItemTransactionModel(ItemTransactionModelAbstract):
 
     class Meta(ItemTransactionModelAbstract.Meta):
         abstract = False
+        swappable = swapper.swappable_setting('django_ledger', 'ItemTransactionModel')
 
 
 class ItemModel(ItemModelAbstract):
@@ -1791,3 +1794,4 @@ class ItemModel(ItemModelAbstract):
 
     class Meta(ItemModelAbstract.Meta):
         abstract = False
+        swappable = swapper.swappable_setting('django_ledger', 'ItemModel')

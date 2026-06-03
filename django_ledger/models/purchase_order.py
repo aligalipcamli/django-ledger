@@ -18,6 +18,7 @@ from string import ascii_uppercase, digits
 from typing import Tuple, List, Union, Optional, Dict
 from uuid import uuid4, UUID
 
+import swapper
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.validators import MinLengthValidator
@@ -30,10 +31,10 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
 from django_ledger.io.io_core import get_localdate
-from django_ledger.models.bill import BillModel, BillModelQuerySet
+from django_ledger.models.bill import BillModelQuerySet
 from django_ledger.models.deprecations import deprecated_entity_slug_behavior
 from django_ledger.models.entity import EntityModel
-from django_ledger.models.items import ItemTransactionModel, ItemTransactionModelQuerySet, ItemModelQuerySet, ItemModel
+from django_ledger.models.items import ItemTransactionModel, ItemTransactionModelQuerySet, ItemModelQuerySet
 from django_ledger.models.mixins import CreateUpdateMixIn, MarkdownNotesMixIn, ItemizeMixIn
 from django_ledger.models.signals import (
     po_status_draft,
@@ -245,12 +246,12 @@ class PurchaseOrderModelAbstract(CreateUpdateMixIn,
     date_fulfilled = models.DateField(blank=True, null=True, verbose_name=_('Fulfillment Date'))
     date_canceled = models.DateField(null=True, blank=True, verbose_name=_('Canceled Date'))
 
-    po_items = models.ManyToManyField('django_ledger.ItemModel',
-                                      through='django_ledger.ItemTransactionModel',
+    po_items = models.ManyToManyField(swapper.get_model_name('django_ledger', 'ItemModel'),
+                                      through=swapper.get_model_name('django_ledger', 'ItemTransactionModel'),
                                       through_fields=('po_model', 'item_model'),
                                       verbose_name=_('Purchase Order Items'))
 
-    ce_model = models.ForeignKey('django_ledger.EstimateModel',
+    ce_model = models.ForeignKey(swapper.get_model_name('django_ledger', 'EstimateModel'),
                                  on_delete=models.RESTRICT,
                                  null=True,
                                  blank=True,
@@ -387,6 +388,7 @@ class PurchaseOrderModelAbstract(CreateUpdateMixIn,
         return itemtxs_batch
 
     def get_item_model_qs(self) -> ItemModelQuerySet:
+        ItemModel = lazy_loader.get_item_model()
         return ItemModel.objects.filter(
             entity_id__exact=self.entity_id
         ).purchase_orders()
@@ -411,7 +413,7 @@ class PurchaseOrderModelAbstract(CreateUpdateMixIn,
         A tuple: ItemTransactionModelQuerySet, dict
         """
         if not queryset:
-            queryset = self.itemtransactionmodel_set.all().select_related('bill_model', 'item_model')
+            queryset = self.get_itemtxs_related_manager().all().select_related('bill_model', 'item_model')
         else:
             self.validate_item_transaction_qs(queryset)
 
@@ -855,7 +857,8 @@ class PurchaseOrderModelAbstract(CreateUpdateMixIn,
         self.po_status = self.PO_STATUS_APPROVED
         self.clean()
         if commit:
-            self.itemtransactionmodel_set.all().update(po_item_status=ItemTransactionModel.STATUS_NOT_ORDERED)
+            ItemTransactionModel = lazy_loader.get_item_transaction_model()
+            self.get_itemtxs_related_manager().all().update(po_item_status=ItemTransactionModel.STATUS_NOT_ORDERED)
             self.save(update_fields=[
                 'date_approved',
                 'po_status',
@@ -1018,6 +1021,7 @@ class PurchaseOrderModelAbstract(CreateUpdateMixIn,
         self.clean()
 
         if commit:
+            ItemTransactionModel = lazy_loader.get_item_transaction_model()
             if isinstance(po_items, list):
                 ItemTransactionModel.objects.filter(
                     uuid__in=[i.uuid for i in po_items]
@@ -1157,7 +1161,9 @@ class PurchaseOrderModelAbstract(CreateUpdateMixIn,
         -------
         BillModelQuerySet
         """
-        return BillModel.objects.filter(itemtransactionmodel__po_model__uuid__exact=self.uuid)
+        itemtxs_related_query_name = lazy_loader.get_item_transaction_model_related_query_name('bill_model')
+        BillModel = lazy_loader.get_bill_model()
+        return BillModel.objects.filter(**{f'{itemtxs_related_query_name}__po_model__uuid__exact': self.uuid})
 
     def get_status_action_date(self):
         """
@@ -1262,6 +1268,7 @@ class PurchaseOrderModel(PurchaseOrderModelAbstract):
 
     class Meta(PurchaseOrderModelAbstract.Meta):
         abstract = False
+        swappable = swapper.swappable_setting('django_ledger', 'PurchaseOrderModel')
 
 
 def purchaseordermodel_presave(instance: PurchaseOrderModel, **kwargs):
@@ -1269,4 +1276,8 @@ def purchaseordermodel_presave(instance: PurchaseOrderModel, **kwargs):
         instance.generate_po_number(commit=False)
 
 
-pre_save.connect(receiver=purchaseordermodel_presave, sender=PurchaseOrderModel)
+pre_save.connect(
+    receiver=purchaseordermodel_presave,
+    sender=swapper.get_model_name('django_ledger', 'PurchaseOrderModel'),
+    dispatch_uid='django_ledger.purchaseordermodel_presave',
+)

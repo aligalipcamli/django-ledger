@@ -19,10 +19,9 @@ from django.views.generic import (
 )
 
 from django_ledger.forms.customer import CustomerModelForm
-from django_ledger.models.customer import CustomerModel, CustomerModelQueryset
+from django_ledger.models.customer import CustomerModelQueryset
 from django_ledger.models.entity import EntityModel
-from django_ledger.models.invoice import InvoiceModel
-from django_ledger.models.receipt import ReceiptModel
+from django_ledger.models.utils import lazy_loader
 from django_ledger.views.mixins import DjangoLedgerSecurityMixIn
 
 
@@ -31,6 +30,7 @@ class CustomerModelModelViewQuerySetMixIn(DjangoLedgerSecurityMixIn):
 
     def get_queryset(self):
         if self.queryset is None:
+            CustomerModel = lazy_loader.get_customer_model()
             self.queryset = CustomerModel.objects.for_entity(
                 entity_model=self.kwargs['entity_slug'],
             ).order_by('-updated')
@@ -66,7 +66,7 @@ class CustomerModelCreateView(CustomerModelModelViewQuerySetMixIn, CreateView):
         )
 
     def form_valid(self, form):
-        customer_model: CustomerModel = form.save(commit=False)
+        customer_model = form.save(commit=False)
         entity_model = EntityModel.objects.for_user(user_model=self.request.user).get(
             slug__exact=self.kwargs['entity_slug']
         )
@@ -85,7 +85,7 @@ class CustomerModelUpdateView(CustomerModelModelViewQuerySetMixIn, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super(CustomerModelUpdateView, self).get_context_data(**kwargs)
-        customer_model: CustomerModel = self.object
+        customer_model = self.object
         context['page_title'] = self.PAGE_TITLE
         context['header_title'] = self.PAGE_TITLE
         context['header_subtitle'] = customer_model.customer_number
@@ -116,12 +116,14 @@ class CustomerModelDetailView(CustomerModelModelViewQuerySetMixIn, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        customer: CustomerModel = self.object
+        customer = self.object
+        ReceiptModel = lazy_loader.get_receipt_model()
         receipts_qs = (
             ReceiptModel.objects.for_entity(entity_model=self.AUTHORIZED_ENTITY_MODEL)
             .for_customer(customer_model=customer)
             .order_by('-updated')
         )
+        InvoiceModel = lazy_loader.get_invoice_model()
         invoices_qs = (
             InvoiceModel.objects.for_entity(entity_model=self.AUTHORIZED_ENTITY_MODEL)
             .filter(customer=customer)

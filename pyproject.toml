@@ -20,6 +20,7 @@ dependencies = [
     "markdown>=3.9",
     "ofxtools>=0.9.5",
     "pillow>=11.3.0",
+    "swapper>=1.4,<2",
 ]
 classifiers = [
     "Programming Language :: Python :: 3",

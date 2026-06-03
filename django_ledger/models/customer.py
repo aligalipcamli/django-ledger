@@ -10,6 +10,7 @@ import os
 import warnings
 from uuid import UUID, uuid4
 
+import swapper
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import IntegrityError, models, transaction
 from django.db.models import F, Manager, Q, QuerySet
@@ -397,3 +398,4 @@ class CustomerModel(CustomerModelAbstract):
 
     class Meta(CustomerModelAbstract.Meta):
         abstract = False
+        swappable = swapper.swappable_setting('django_ledger', 'CustomerModel')

@@ -24,6 +24,7 @@ from django_ledger.models import (
     ImportJobModel,
     StagedTransactionModel,
 )
+from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import DJANGO_LEDGER_FORM_INPUT_CLASSES
 
 
@@ -31,7 +32,8 @@ class ImportJobModelCreateForm(ModelForm):
     def __init__(self, entity_model: EntityModel, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.ENTITY_MODEL: EntityModel = entity_model
-        self.fields['bank_account_model'].queryset = self.ENTITY_MODEL.bankaccountmodel_set.all().active()
+        BankAccountModel = lazy_loader.get_bank_account_model()
+        self.fields['bank_account_model'].queryset = BankAccountModel.objects.for_entity(self.ENTITY_MODEL).active()
 
     ofx_file = forms.FileField(
         label='Select File...',
@@ -137,8 +139,10 @@ class BaseStagedTransactionModelFormSet(BaseModelFormSet):
         self.unit_model_qs = entity_model.entityunitmodel_set.all()
         self.UNIT_MODEL_CHOICES = [(None, '----')] + [(u.uuid, u) for i, u in enumerate(self.unit_model_qs)]
 
-        self.VENDOR_MODEL_QS = entity_model.vendormodel_set.visible().order_by('vendor_name')
-        self.CUSTOMER_MODEL_QS = entity_model.customermodel_set.visible().order_by('customer_name')
+        VendorModel = lazy_loader.get_vendor_model()
+        self.VENDOR_MODEL_QS = VendorModel.objects.for_entity(entity_model).visible().order_by('vendor_name')
+        CustomerModel = lazy_loader.get_customer_model()
+        self.CUSTOMER_MODEL_QS = CustomerModel.objects.for_entity(entity_model).visible().order_by('customer_name')
 
         self.VENDOR_CHOICES = [(None, '-----')] + [(str(v.uuid), v) for v in self.VENDOR_MODEL_QS]
         self.CUSTOMER_CHOICES = [(None, '-----')] + [(str(c.uuid), c) for c in self.CUSTOMER_MODEL_QS]

@@ -16,6 +16,7 @@ from decimal import Decimal
 from typing import Dict, List, Optional, Set, Union
 from uuid import UUID, uuid4
 
+import swapper
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models import (
@@ -45,6 +46,7 @@ from django_ledger.models.journal_entry import JournalEntryModel
 from django_ledger.models.mixins import CreateUpdateMixIn
 from django_ledger.models.receipt import ReceiptModel
 from django_ledger.models.transactions import TransactionModel
+from django_ledger.models.utils import lazy_loader
 from django_ledger.settings import DJANGO_LEDGER_MATCH_DAYS_WINDOW, DJANGO_LEDGER_USE_DEPRECATED_BEHAVIOR
 
 
@@ -233,7 +235,7 @@ class ImportJobModelAbstract(CreateUpdateMixIn):
     uuid = models.UUIDField(default=uuid4, editable=False, primary_key=True)
     description = models.CharField(max_length=200, verbose_name=_('Description'))
     bank_account_model = models.ForeignKey(
-        'django_ledger.BankAccountModel',
+        swapper.get_model_name('django_ledger', 'BankAccountModel'),
         on_delete=models.CASCADE,
         verbose_name=_('Associated Bank Account Model'),
     )
@@ -1009,7 +1011,7 @@ class StagedTransactionModelAbstract(CreateUpdateMixIn):
         help_text=_('The receipt type of the transaction.'),
     )
     vendor_model = models.ForeignKey(
-        'django_ledger.VendorModel',
+        swapper.get_model_name('django_ledger', 'VendorModel'),
         on_delete=models.RESTRICT,
         null=True,
         blank=True,
@@ -1017,7 +1019,7 @@ class StagedTransactionModelAbstract(CreateUpdateMixIn):
         help_text=_('The Vendor associated with the transaction.'),
     )
     customer_model = models.ForeignKey(
-        'django_ledger.CustomerModel',
+        swapper.get_model_name('django_ledger', 'CustomerModel'),
         on_delete=models.RESTRICT,
         null=True,
         blank=True,
@@ -2092,6 +2094,7 @@ class StagedTransactionModelAbstract(CreateUpdateMixIn):
             if isinstance(receipt_date, datetime):
                 receipt_date = receipt_date.date()
 
+        ReceiptModel = lazy_loader.get_receipt_model()
         receipt_model = ReceiptModel()
 
         if commit:
