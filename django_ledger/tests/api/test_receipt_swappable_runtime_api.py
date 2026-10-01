@@ -196,8 +196,8 @@ class ReceiptSwappableRuntimeAPITest(TestCase):
         self.assertTrue(self.CustomReceiptModel.objects.filter(uuid=receipt_model.uuid).exists())
 
     def test_runtime_entity_get_receipts_queries_custom_receipt_model(self):
-        setup = self.create_accounting_setup(name='API Swappable Receipt Scoped Entity')
-        other_setup = self.create_accounting_setup(name='API Other Swappable Receipt Scoped Entity')
+        setup = self.create_accounting_setup(name='API Receipt Scoped Entity')
+        other_setup = self.create_accounting_setup(name='API Receipt Other Scoped Entity')
         receipt_model = self.create_sales_receipt(setup)
         other_receipt_model = self.create_sales_receipt(other_setup)
 
@@ -208,7 +208,7 @@ class ReceiptSwappableRuntimeAPITest(TestCase):
         self.assertFalse(receipt_qs.filter(uuid=other_receipt_model.uuid).exists())
 
     def test_runtime_customer_and_vendor_receipt_paths_use_custom_receipts(self):
-        setup = self.create_accounting_setup(name='API Swappable Receipt Counterparty Entity')
+        setup = self.create_accounting_setup(name='API Receipt Counterparty Entity')
         sales_receipt = self.create_sales_receipt(setup)
         expense_receipt = self.create_expense_receipt(setup)
         receipt_qs = self.CustomReceiptModel.objects.for_entity(setup['entity_model'])
@@ -222,7 +222,7 @@ class ReceiptSwappableRuntimeAPITest(TestCase):
         from django_ledger.views.customer import CustomerModelDetailView
         from django_ledger.views.vendor import VendorModelDetailView
 
-        setup = self.create_accounting_setup(name='API Swappable Receipt Detail View Entity')
+        setup = self.create_accounting_setup(name='API Receipt Detail Entity')
         sales_receipt = self.create_sales_receipt(setup)
         expense_receipt = self.create_expense_receipt(setup)
 
@@ -244,7 +244,7 @@ class ReceiptSwappableRuntimeAPITest(TestCase):
         self.assertFalse(vendor_context['receipts'].filter(uuid=sales_receipt.uuid).exists())
 
     def test_runtime_staged_transaction_migrate_receipt_creates_custom_receipt(self):
-        setup = self.create_accounting_setup(name='API Swappable Receipt Staged Entity')
+        setup = self.create_accounting_setup(name='API Receipt Staged Entity')
         staged_tx = self.create_staged_receipt_transaction(setup)
 
         generated_receipt = staged_tx.generate_receipt_model(receipt_date=date(2026, 4, 15), commit=False)
