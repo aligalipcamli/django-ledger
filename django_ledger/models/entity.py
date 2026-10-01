@@ -957,10 +957,13 @@ class EntityModelAbstract(
         return LedgerModel(entity=self, posted=posted, name=name, ledger_xid=ledger_xid)
 
     # #### SLUG GENERATION ###
-    @staticmethod
-    def generate_slug_from_name(name: str) -> str:
+    @classmethod
+    def generate_slug_from_name(cls, name: str) -> str:
         """
-        Uses Django's slugify function to create a valid slug from any given string.
+        Generate a bounded slug without truncating the random suffix or display name.
+
+        Keep the existing short-name format. Names with no ASCII slug characters
+        use a stable technical prefix; uniqueness remains enforced by the field.
 
         Parameters
         ----------
@@ -971,10 +974,10 @@ class EntityModelAbstract(
         -------
             The slug as a String.
         """
-        slug = slugify(name)
         suffix = ''.join(choices(ENTITY_RANDOM_SLUG_SUFFIX, k=8))
-        entity_slug = f'{slug}-{suffix}'
-        return entity_slug
+        prefix_length = cls._meta.get_field('slug').max_length - len(suffix) - 1
+        slug = (slugify(name) or 'entity')[:prefix_length].rstrip('-_')
+        return f'{slug}-{suffix}'
 
     def generate_slug(
         self,

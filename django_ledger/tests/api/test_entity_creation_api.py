@@ -240,8 +240,9 @@ class EntityCreationAPITest(TestCase):
 
     def test_long_named_root_and_child_keep_names_and_valid_tree(self):
         name = "A" * EntityModel._meta.get_field("name").max_length
-        parent = self.create_entity(name=name)
-        child = self.create_entity(name=name, parent_entity=parent)
+        with patch("django_ledger.models.entity.choices", side_effect=[list("12345678"), list("abcdefgh")]):
+            parent = self.create_entity(name=name)
+            child = self.create_entity(name=name, parent_entity=parent)
         self.assert_entity_is_child_of_parent(child, parent)
         self.assertEqual(parent.name, name)
         self.assertEqual(child.name, name)
