@@ -82,14 +82,14 @@ class TransactionFilterAPITest(TestCase):
         }
 
     def create_unit(self, setup, *, name, slug, document_prefix):
-        unit_model = EntityUnitModel.add_root(
+        unit_model = EntityUnitModel.objects.add_root(create_kwargs=dict(
             name=name,
             slug=slug,
             entity=setup["entity_model"],
             document_prefix=document_prefix,
             active=True,
             hidden=False,
-        )
+        ))
         unit_model.refresh_from_db()
         return unit_model
 

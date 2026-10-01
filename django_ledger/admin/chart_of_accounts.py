@@ -20,7 +20,7 @@ class AccountModelInLineFormSet(BaseInlineFormSet):
     def save_new(self, form, commit=True):
         setattr(form.instance, self.fk.name, self.instance)
         if commit:
-            account_model = AccountModel.add_root(
+            account_model = AccountModel.objects.add_root(
                 instance=super().save_new(form, commit=False)
             )
             return account_model

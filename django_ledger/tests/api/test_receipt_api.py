@@ -109,14 +109,14 @@ class ReceiptHighLevelAPITest(TestCase):
         vendor_model.full_clean()
         vendor_model.save()
 
-        unit_model = EntityUnitModel.add_root(
+        unit_model = EntityUnitModel.objects.add_root(create_kwargs=dict(
             name=f"{name} Unit",
             slug="api-receipt-unit",
             entity=entity_model,
             document_prefix="RCU",
             active=True,
             hidden=False,
-        )
+        ))
 
         return {
             "entity_model": entity_model,

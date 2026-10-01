@@ -87,7 +87,7 @@ class EntityModelCreateView(DjangoLedgerSecurityMixIn, EntityModelModelViewQuery
             accrual_method=cleaned_data['accrual_method'],
             admin=user_model
         )
-        entity_model: EntityModel = EntityModel.add_root(instance=entity_model)
+        entity_model: EntityModel = EntityModel.objects.add_root(instance=entity_model)
         default_coa_model = entity_model.create_chart_of_accounts(assign_as_default=True, commit=True)
 
         if default_coa:

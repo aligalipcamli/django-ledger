@@ -100,13 +100,13 @@ class ReceiptSwappableRuntimeAPITest(TestCase):
             entity_model=entity_model,
             active=True,
         )
-        unit_model = EntityUnitModel.add_root(
+        unit_model = EntityUnitModel.objects.add_root(create_kwargs=dict(
             name=f'{name} Unit',
             slug=f'{name.lower().replace(" ", "-")}-unit',
             entity=entity_model,
             document_prefix='RCU',
             active=True,
-        )
+        ))
         import_job = ImportJobModel.objects.create(
             description=f'{name} Import Job',
             bank_account_model=bank_account,

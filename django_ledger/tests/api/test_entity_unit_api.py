@@ -67,14 +67,14 @@ class EntityUnitHighLevelAPITest(TestCase):
         active=True,
         hidden=False,
     ):
-        unit_model = EntityUnitModel.add_root(
+        unit_model = EntityUnitModel.objects.add_root(create_kwargs=dict(
             name=name,
             slug=slug,
             entity=setup["entity_model"],
             document_prefix=document_prefix,
             active=active,
             hidden=hidden,
-        )
+        ))
 
         unit_model.refresh_from_db()
         return unit_model
@@ -226,10 +226,10 @@ class EntityUnitHighLevelAPITest(TestCase):
     def test_entity_unit_clean_generates_slug_and_document_prefix_when_missing(self):
         setup = self.create_entity_setup()
 
-        unit_model = EntityUnitModel.add_root(
+        unit_model = EntityUnitModel.objects.add_root(create_kwargs=dict(
             name="API Generated Unit",
             entity=setup["entity_model"],
-        )
+        ))
 
         unit_model.clean()
         unit_model.save()

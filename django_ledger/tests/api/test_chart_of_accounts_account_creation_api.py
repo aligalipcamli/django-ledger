@@ -50,7 +50,7 @@ class ChartOfAccountsAccountCreationAPITest(TestCase):
         return entity_model, coa_model
 
     def assert_account_has_ancestor_role(self, account_model, role):
-        ancestor_roles = {ancestor.role for ancestor in account_model.get_ancestors()}
+        ancestor_roles = {ancestor.role for ancestor in AccountModel.objects.get_ancestors(account_model)}
         self.assertIn(role, ancestor_roles)
 
     def test_create_account_creates_non_root_account_attached_to_same_coa(self):

@@ -444,6 +444,7 @@ dependencies = [
     { name = "markdown" },
     { name = "ofxtools" },
     { name = "pillow" },
+    { name = "swapper" },
 ]
 
 [package.dev-dependencies]
@@ -466,12 +467,13 @@ readthedocs = [
 [package.metadata]
 requires-dist = [
     { name = "django", specifier = ">=4.2" },
-    { name = "django-treebeard", specifier = ">=4.7.1" },
+    { name = "django-treebeard", specifier = ">=7.0.1,<8" },
     { name = "faker", specifier = ">=37.6.0" },
     { name = "fpdf2", specifier = ">=2.8.4" },
     { name = "markdown", specifier = ">=3.9" },
     { name = "ofxtools", specifier = ">=0.9.5" },
     { name = "pillow", specifier = ">=11.3.0" },
+    { name = "swapper", specifier = ">=1.4,<2" },
 ]
 
 [package.metadata.requires-dev]
@@ -491,15 +493,15 @@ readthedocs = [
 
 [[package]]
 name = "django-treebeard"
-version = "4.8.0"
+version = "7.0.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "django", version = "5.2.10", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "django", version = "6.0.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/7a/d2/615c2d33b3b55e106ee590b164c0d4a8372527293c85c61175e81ded2aea/django_treebeard-4.8.0.tar.gz", hash = "sha256:61b8076b576107da21f6f6040774c0d17025200c2efdb70dd1f14b18c9206c3a", size = 292517, upload-time = "2025-12-03T03:58:40.625Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e1/c0/1875927de0e4b00670b3b8394c424edce7b964b30f06bb9e9f8e1657b6cc/django_treebeard-7.0.2.tar.gz", hash = "sha256:37b917c9b5d56ae2e0f3d03be4446e861d28bf021433045b37d952e0188a114d", size = 231337, upload-time = "2026-09-15T04:29:33.921Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/aa/3a/3731f6d5696b5dfd1c7830a64450e1f49b512cb192b2d3e37b72cc75470b/django_treebeard-4.8.0-py3-none-any.whl", hash = "sha256:ecaa7a0bbfa86a48fc91ff335513e83c841cdfe1add6229d04ac7096198d5d51", size = 70997, upload-time = "2025-12-03T03:58:37.292Z" },
+    { url = "https://files.pythonhosted.org/packages/1e/b4/01235cccddcd911b26652da568d450ade8fa352631f518f0032edfa6c58f/django_treebeard-7.0.2-py3-none-any.whl", hash = "sha256:95bf9296401a99f3575b060265918b9456c7ec36eb2026c6287f33017ba0d5d7", size = 80452, upload-time = "2026-09-15T04:29:32.514Z" },
 ]
 
 [[package]]
@@ -2002,6 +2004,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/28/e3/55dcc2cfbc3ca9c29519eb6884dd1415ecb53b0e934862d3559ddcb7e20b/stack_data-0.6.3.tar.gz", hash = "sha256:836a778de4fec4dcd1dcd89ed8abff8a221f58308462e1c4aa2a3cf30148f0b9", size = 44707, upload-time = "2023-09-30T13:58:05.479Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f1/7b/ce1eafaf1a76852e2ec9b22edecf1daa58175c090266e9f6c64afcd81d91/stack_data-0.6.3-py3-none-any.whl", hash = "sha256:d5558e0c25a4cb0853cddad3d77da9891a08cb85dd9f9f91b9f8cd66e511e695", size = 24521, upload-time = "2023-09-30T13:58:03.53Z" },
+]
+
+[[package]]
+name = "swapper"
+version = "1.5.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/c2/3e/a28d29aa28570b09257dad52cc5e5ebda9fe8802eeca0d9e254ccf8e5788/swapper-1.5.0.tar.gz", hash = "sha256:405f934265aa0c8d8b8e6b1be584875d1a3b7de6b1cd6f47367a4dbdc028609a", size = 24119, upload-time = "2026-09-01T21:51:07.192Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/29/5f/eab0a39f9c16c5d32c00f1f9b7ee9e8823686d1fd40a7fd1f0fc3247a59c/swapper-1.5.0-py2.py3-none-any.whl", hash = "sha256:67ae5a01bc12159dede567b98212a83baa53aa466a8eb5cf44af226b8219d21c", size = 7273, upload-time = "2026-09-01T21:51:05.953Z" },
 ]
 
 [[package]]

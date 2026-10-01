@@ -83,7 +83,7 @@ class EntityUnitModelCreateView(EntityUnitModelModelBaseView, CreateView):
         entity_model_qs = EntityModel.objects.for_user(user_model=self.request.user)
         entity_model = get_object_or_404(entity_model_qs, slug__exact=self.kwargs['entity_slug'])
         entity_unit_model.entity = entity_model
-        EntityUnitModel.add_root(instance=entity_unit_model)
+        EntityUnitModel.objects.add_root(instance=entity_unit_model)
         return HttpResponseRedirect(self.get_success_url())
 
 

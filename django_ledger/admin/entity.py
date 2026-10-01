@@ -26,7 +26,7 @@ class EntityUnitModelInLineFormSet(BaseInlineFormSet):
     def save_new(self, form, commit=True):
         setattr(form.instance, self.fk.name, self.instance)
         if commit:
-            unit_model = EntityUnitModel.add_root(
+            unit_model = EntityUnitModel.objects.add_root(
                 instance=super().save_new(form, commit=False)
             )
             return unit_model
@@ -206,7 +206,7 @@ class EntityModelAdmin(ModelAdmin):
         if not change:
             if obj.uuid is None:
                 obj.uuid = uuid4()
-            EntityModel.add_root(instance=obj)
+            EntityModel.objects.add_root(instance=obj)
             return
         super().save_model(request, obj, form, change)
 

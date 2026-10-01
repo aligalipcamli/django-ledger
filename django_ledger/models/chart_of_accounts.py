@@ -304,7 +304,7 @@ class ChartOfAccountModelAbstract(SlugNameMixIn, CreateUpdateMixIn):
                     locked=True,
                     balance_type=role_meta['balance_type'],
                 )
-                AccountModel.add_root(instance=root_account)
+                AccountModel.objects.add_root(instance=root_account)
 
                 # must retrieve root model after added pero django-treebeard documentation...
                 coa_root_account_model = AccountModel.objects.get(uuid__exact=account_pk)
@@ -313,7 +313,8 @@ class ChartOfAccountModelAbstract(SlugNameMixIn, CreateUpdateMixIn):
                     if root_role not in existing_root_roles:
                         account_pk = uuid4()
                         role_meta = ROOT_GROUP_META[root_role]
-                        coa_root_account_model.add_child(
+                        AccountModel.objects.add_child(
+                            coa_root_account_model,
                             instance=AccountModel(
                                 uuid=account_pk,
                                 code=role_meta['code'],
@@ -460,7 +461,7 @@ class ChartOfAccountModelAbstract(SlugNameMixIn, CreateUpdateMixIn):
             A dictionary containing all accounts from the chart of accounts in a nested structure.
         """
         root_account = self.get_coa_root_node()
-        return AccountModel.dump_bulk(parent=root_account)
+        return AccountModel.objects.dump_bulk(parent=root_account)
 
     def generate_slug(self, commit: bool = False, raise_exception: bool = False) -> str:
         """
@@ -592,7 +593,7 @@ class ChartOfAccountModelAbstract(SlugNameMixIn, CreateUpdateMixIn):
             account_model=account_model, root_account_qs=root_account_qs
         )
 
-        account_root_node.add_child(instance=account_model)
+        AccountModel.objects.add_child(account_root_node, instance=account_model)
         coa_accounts_qs = self.get_non_root_coa_accounts_qs()
         return coa_accounts_qs.get(uuid__exact=account_model.uuid)
 

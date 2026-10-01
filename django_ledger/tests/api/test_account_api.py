@@ -90,7 +90,7 @@ class AccountHighLevelAPITest(TestCase):
 
         account_model.refresh_from_db()
 
-        ancestors = list(account_model.get_ancestors())
+        ancestors = list(AccountModel.objects.get_ancestors(account_model))
 
         self.assertGreater(
             len(ancestors),

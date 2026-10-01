@@ -220,7 +220,7 @@ class EntityDataGenerator(LoggingMixIn):
 
         for unit in entity_unit_models:
             unit.clean()
-            EntityUnitModel.add_root(instance=unit)
+            EntityUnitModel.objects.add_root(instance=unit)
 
         self.entity_unit_models = self.entity_model.entityunitmodel_set.all()
 

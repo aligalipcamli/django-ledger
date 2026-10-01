@@ -59,7 +59,7 @@ from django.db.models import Q, F, UniqueConstraint
 from django.db.models.signals import pre_save
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from treebeard.mp_tree import MP_Node, MP_NodeManager, MP_NodeQuerySet
+from treebeard.mp_tree import MP_Node, MP_NodeManager
 
 from django_ledger.io import DEBIT, CREDIT
 from django_ledger.io.roles import (
@@ -72,6 +72,7 @@ from django_ledger.io.roles import (
 from django_ledger.models.deprecations import deprecated_entity_slug_behavior
 from django_ledger.models.mixins import CreateUpdateMixIn
 from django_ledger.models.utils import lazy_loader
+from django_ledger.models.tree import LedgerMPNodeQuerySet
 from django_ledger.settings import (
     DJANGO_LEDGER_ACCOUNT_CODE_GENERATE,
     DJANGO_LEDGER_ACCOUNT_CODE_USE_PREFIX,
@@ -83,7 +84,7 @@ class AccountModelValidationError(ValidationError):
     pass
 
 
-class AccountModelQuerySet(MP_NodeQuerySet):
+class AccountModelQuerySet(LedgerMPNodeQuerySet):
     """
     Custom QuerySet for AccountModel inheriting from MP_NodeQuerySet.
     """
@@ -614,7 +615,7 @@ class AccountModelAbstract(MP_Node, CreateUpdateMixIn):
             **kwargs
         )
         account_model.clean()
-        account_model = cls.add_root(instance=account_model)
+        account_model = cls.objects.add_root(instance=account_model)
         return account_model
 
     @property

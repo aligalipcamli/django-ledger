@@ -33,12 +33,13 @@ from django.db.models import F, Q
 from django.urls import reverse
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
-from treebeard.mp_tree import MP_Node, MP_NodeManager, MP_NodeQuerySet
+from treebeard.mp_tree import MP_Node, MP_NodeManager
 
 from django_ledger.io.io_core import IOMixIn
 from django_ledger.models import lazy_loader
 from django_ledger.models.deprecations import deprecated_entity_slug_behavior
 from django_ledger.models.mixins import CreateUpdateMixIn, SlugNameMixIn
+from django_ledger.models.tree import LedgerMPNodeQuerySet
 from django_ledger.settings import DJANGO_LEDGER_USE_DEPRECATED_BEHAVIOR
 
 ENTITY_UNIT_RANDOM_SLUG_SUFFIX = ascii_lowercase + digits
@@ -48,7 +49,7 @@ class EntityUnitModelValidationError(ValidationError):
     pass
 
 
-class EntityUnitModelQuerySet(MP_NodeQuerySet):
+class EntityUnitModelQuerySet(LedgerMPNodeQuerySet):
     def for_user(self, user_model) -> 'EntityUnitModelQuerySet':
         if user_model.is_superuser:
             return self

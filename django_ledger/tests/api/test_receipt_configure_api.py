@@ -97,14 +97,14 @@ class ReceiptConfigureAPITest(TestCase):
         vendor_model.save()
         vendor_model.refresh_from_db()
 
-        unit_model = EntityUnitModel.add_root(
+        unit_model = EntityUnitModel.objects.add_root(create_kwargs=dict(
             name=f"{name} Unit",
             slug=f"{slugify(name)}-unit",
             entity=entity_model,
             document_prefix="RCU",
             active=True,
             hidden=False,
-        )
+        ))
 
         return {
             "entity_model": entity_model,

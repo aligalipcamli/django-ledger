@@ -72,14 +72,14 @@ class TransactionHelpersAPITest(TestCase):
         }
 
     def create_unit(self, setup):
-        unit_model = EntityUnitModel.add_root(
+        unit_model = EntityUnitModel.objects.add_root(create_kwargs=dict(
             name="API Transaction Helpers Unit",
             slug="api-transaction-helpers-unit",
             entity=setup["entity_model"],
             document_prefix="THU",
             active=True,
             hidden=False,
-        )
+        ))
         unit_model.refresh_from_db()
         return unit_model
 

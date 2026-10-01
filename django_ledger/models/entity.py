@@ -71,9 +71,10 @@ from django_ledger.models.mixins import (
 )
 from django_ledger.models.unit import EntityUnitModel
 from django_ledger.models.utils import lazy_loader
+from django_ledger.models.tree import LedgerMPNodeQuerySet
 from django_ledger.models.vendor import VendorModel, VendorModelQuerySet
 from django_ledger.settings import DJANGO_LEDGER_DEFAULT_CLOSING_ENTRY_CACHE_TIMEOUT
-from treebeard.mp_tree import MP_Node, MP_NodeManager, MP_NodeQuerySet
+from treebeard.mp_tree import MP_Node, MP_NodeManager
 
 UserModel = get_user_model()
 
@@ -84,11 +85,27 @@ class EntityModelValidationError(ValidationError):
     pass
 
 
-class EntityModelQuerySet(MP_NodeQuerySet):
+class EntityModelQuerySet(LedgerMPNodeQuerySet):
     """
     A custom defined EntityModel QuerySet.
     Inherits from the Materialized Path Node QuerySet Class from Django Treebeard.
     """
+
+    def select_for_update(self, nowait=False, skip_locked=False, of=(), no_key=False):
+        """Lock entity rows, not the manager's nullable default-CoA read join.
+
+        Treebeard locks the parent through this public QuerySet API. PostgreSQL
+        rejects an unrestricted FOR UPDATE on the nullable join. Keep that
+        parent lock and the read optimizations; honor explicitly requested
+        lock targets and leave backends without OF support unchanged.
+        """
+        from django.db import connections
+
+        if not of and connections[self.db].features.has_select_for_update_of:
+            of = ('self',)
+        return super().select_for_update(
+            nowait=nowait, skip_locked=skip_locked, of=of, no_key=no_key
+        )
 
     def hidden(self) -> 'EntityModelQuerySet':
         """
@@ -909,8 +926,8 @@ class EntityModelAbstract(
         entity_model.clean()
 
         if parent_entity_model:
-            return parent_entity_model.add_child(instance=entity_model)
-        return cls.add_root(instance=entity_model)
+            return cls.objects.add_child(parent_entity_model, instance=entity_model)
+        return cls.objects.add_root(instance=entity_model)
 
     # ### ACCRUAL METHODS ######
     def get_accrual_method(self) -> str:

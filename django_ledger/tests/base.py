@@ -163,7 +163,7 @@ class DjangoLedgerBaseTest(TestCase):
     def create_entity_models(cls, save=True, n: int = 5):
         cls.refresh_test_data(n)
         for ent_data in cls.TEST_DATA:
-            entity_model = EntityModel.add_root(**ent_data)
+            entity_model = EntityModel.objects.add_root(create_kwargs=ent_data.copy())
             entity_model.admin = cls.user_model
             entity_model.clean()
             if save:

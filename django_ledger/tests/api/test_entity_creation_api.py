@@ -75,7 +75,7 @@ class EntityCreationAPITest(TestCase):
 
         self.assertFalse(child_entity.is_root())
         self.assertTrue(child_entity.is_child_of(parent_entity))
-        self.assertEqual(child_entity.get_parent().uuid, parent_entity.uuid)
+        self.assertEqual(EntityModel.objects.get_parent(child_entity).uuid, parent_entity.uuid)
 
     def test_create_root_entity_assigns_public_fields_and_tree_root(self):
         entity_model = self.create_entity(
