@@ -6,6 +6,7 @@ and access-scope behavior without requiring accounting fixtures.
 """
 
 import re
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -218,6 +219,44 @@ class EntityCreationAPITest(TestCase):
         slug = EntityModel.generate_slug_from_name("API Slug Contract Entity")
 
         self.assert_is_slug_with_random_suffix(slug, "api-slug-contract-entity")
+
+    def test_generated_slug_respects_field_limits_without_shortening_suffix(self):
+        for name, base in (
+            ("A" * 41, "a" * 41),
+            ("A" * 42, "a" * 41),
+            ("A" * 150, "a" * 41),
+            ("A" * 40 + " B", "a" * 40),
+            ("İstanbul Şişli", "istanbul-sisli"),
+            ("東京家具工房", "entity"),
+            ("---", "entity"),
+            ("", "entity"),
+            ("A", "a"),
+        ):
+            with self.subTest(name=name):
+                with patch("django_ledger.models.entity.choices", return_value=list("12345678")):
+                    slug = EntityModel.generate_slug_from_name(name)
+                self.assertEqual(slug, base + "-12345678")
+                EntityModel._meta.get_field("slug").clean(slug, None)
+
+    def test_long_named_root_and_child_keep_names_and_valid_tree(self):
+        name = "A" * EntityModel._meta.get_field("name").max_length
+        parent = self.create_entity(name=name)
+        child = self.create_entity(name=name, parent_entity=parent)
+        self.assert_entity_is_child_of_parent(child, parent)
+        self.assertEqual(parent.name, name)
+        self.assertEqual(child.name, name)
+        self.assertNotEqual(parent.slug, child.slug)
+        self.assertEqual(len(parent.slug), 50)
+        self.assertEqual(len(child.slug), 50)
+
+    def test_unchanged_short_slug_contract_and_existing_slug_survive_save(self):
+        with patch("django_ledger.models.entity.choices", return_value=list("12345678")):
+            entity = self.create_entity(name="Ada Studio")
+        self.assertEqual(entity.slug, "ada-studio-12345678")
+        entity.name = "A" * 150
+        entity.save(update_fields=["name"])
+        entity.refresh_from_db()
+        self.assertEqual(entity.slug, "ada-studio-12345678")
 
     def test_generate_slug_refuses_existing_slug_unless_forced(self):
         entity_model = self.create_entity(name="API Force Slug Entity")
