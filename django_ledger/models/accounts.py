@@ -50,7 +50,7 @@ Roles serve several purposes:
 import warnings
 from itertools import groupby
 from random import randint
-from typing import Union, List, Optional
+from typing import TYPE_CHECKING, Union, List, Optional
 from uuid import uuid4, UUID
 
 from django.core.exceptions import ValidationError
@@ -78,6 +78,10 @@ from django_ledger.settings import (
     DJANGO_LEDGER_ACCOUNT_CODE_USE_PREFIX,
     DJANGO_LEDGER_USE_DEPRECATED_BEHAVIOR
 )
+
+if TYPE_CHECKING:
+    from django_ledger.models.chart_of_accounts import ChartOfAccountModel
+    from django_ledger.models.entity import EntityModel
 
 
 class AccountModelValidationError(ValidationError):

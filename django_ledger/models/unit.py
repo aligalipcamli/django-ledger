@@ -24,7 +24,7 @@ Key advantages of EntityUnits:
 import warnings
 from random import choices
 from string import ascii_lowercase, ascii_uppercase, digits
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID, uuid4
 
 from django.core.exceptions import ValidationError
@@ -41,6 +41,9 @@ from django_ledger.models.deprecations import deprecated_entity_slug_behavior
 from django_ledger.models.mixins import CreateUpdateMixIn, SlugNameMixIn
 from django_ledger.models.tree import LedgerMPNodeQuerySet
 from django_ledger.settings import DJANGO_LEDGER_USE_DEPRECATED_BEHAVIOR
+
+if TYPE_CHECKING:
+    from django_ledger.models.entity import EntityModel
 
 ENTITY_UNIT_RANDOM_SLUG_SUFFIX = ascii_lowercase + digits
 

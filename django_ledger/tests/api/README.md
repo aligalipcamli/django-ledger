@@ -174,6 +174,26 @@ python manage.py test django_ledger.tests.api.test_closing_entry_api
 
 ## Contribution notes
 
+### Model typing imports
+
+`test_model_typing_contract.py` protects the account and entity-unit forward
+references. `EntityModel` and `ChartOfAccountModel` are imported only under
+`TYPE_CHECKING`; runtime model resolution remains with `lazy_loader` to avoid
+circular imports during Django startup. The tests resolve the unchanged
+annotations using an explicit namespace built from those guarded imports and
+check that model names are absent from the runtime module namespaces.
+
+This is a static typing contract, not a promise that bare `get_type_hints()`
+can resolve type-checking-only names without a supplied namespace. It also
+does not certify a whole-project mypy baseline.
+
+With Ruff installed, the owning static gate is:
+
+```bash
+python -m ruff check --select F821 django_ledger/models/accounts.py django_ledger/models/unit.py
+python manage.py test django_ledger.tests.api.test_model_typing_contract
+```
+
 These tests are intentionally more explicit than fixture-heavy tests. The verbosity is a tradeoff: it keeps each behavior contract readable without relying on hidden randomized fixtures or broad shared state.
 
 The suite is especially useful before changes involving:
