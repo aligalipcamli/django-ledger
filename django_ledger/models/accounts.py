@@ -47,6 +47,7 @@ Roles serve several purposes:
 3. Enable accurate generation of financial statements
 4. Facilitate financial ratio calculations
 """
+
 import warnings
 from itertools import groupby
 from random import randint
@@ -63,11 +64,28 @@ from treebeard.mp_tree import MP_Node, MP_NodeManager
 
 from django_ledger.io import DEBIT, CREDIT
 from django_ledger.io.roles import (
-    ACCOUNT_ROLE_CHOICES, BS_ROLES, GROUP_INVOICE, GROUP_BILL, validate_roles,
-    GROUP_ASSETS, GROUP_LIABILITIES, GROUP_CAPITAL, GROUP_INCOME, GROUP_EXPENSES, GROUP_COGS,
-    ROOT_GROUP, BS_BUCKETS, ROOT_ASSETS, ROOT_LIABILITIES,
-    ROOT_CAPITAL, ROOT_INCOME, ROOT_EXPENSES, ROOT_COA, VALID_PARENTS,
-    ROLES_ORDER_ALL, ASSET_CA_CASH
+    ACCOUNT_ROLE_CHOICES,
+    BS_ROLES,
+    GROUP_INVOICE,
+    GROUP_BILL,
+    validate_roles,
+    GROUP_ASSETS,
+    GROUP_LIABILITIES,
+    GROUP_CAPITAL,
+    GROUP_INCOME,
+    GROUP_EXPENSES,
+    GROUP_COGS,
+    ROOT_GROUP,
+    BS_BUCKETS,
+    ROOT_ASSETS,
+    ROOT_LIABILITIES,
+    ROOT_CAPITAL,
+    ROOT_INCOME,
+    ROOT_EXPENSES,
+    ROOT_COA,
+    VALID_PARENTS,
+    ROLES_ORDER_ALL,
+    ASSET_CA_CASH,
 )
 from django_ledger.models.deprecations import deprecated_entity_slug_behavior
 from django_ledger.models.mixins import CreateUpdateMixIn
@@ -76,7 +94,7 @@ from django_ledger.models.tree import LedgerMPNodeQuerySet
 from django_ledger.settings import (
     DJANGO_LEDGER_ACCOUNT_CODE_GENERATE,
     DJANGO_LEDGER_ACCOUNT_CODE_USE_PREFIX,
-    DJANGO_LEDGER_USE_DEPRECATED_BEHAVIOR
+    DJANGO_LEDGER_USE_DEPRECATED_BEHAVIOR,
 )
 
 if TYPE_CHECKING:
@@ -223,14 +241,18 @@ class AccountModelQuerySet(LedgerMPNodeQuerySet):
                 and a list of accounts that fall into that role within the BS bucket.
         """
         accounts_gb = list(
-            (r, sorted(list(gb), key=lambda acc: ROLES_ORDER_ALL.index(acc.role))) for r, gb in
-            groupby(self, key=lambda acc: acc.get_bs_bucket())
+            (r, sorted(list(gb), key=lambda acc: ROLES_ORDER_ALL.index(acc.role)))
+            for r, gb in groupby(self, key=lambda acc: acc.get_bs_bucket())
         )
         return [
-            (bsr, [
-                (r, sorted(list(l), key=lambda acc: acc.code)) for r, l in
-                groupby(gb, key=lambda a: a.get_role_display())
-            ]) for bsr, gb in accounts_gb
+            (
+                bsr,
+                [
+                    (r, sorted(list(l), key=lambda acc: acc.code))
+                    for r, l in groupby(gb, key=lambda a: a.get_role_display())
+                ],
+            )
+            for bsr, gb in accounts_gb
         ]
 
     def is_role_default(self) -> 'AccountModelQuerySet':
@@ -254,18 +276,10 @@ class AccountModelQuerySet(LedgerMPNodeQuerySet):
         QuerySet
             A QuerySet containing the filtered results.
         """
-        return self.filter(
-            Q(locked=False) &
-            Q(active=True) &
-            Q(coa_model__active=True)
-        )
+        return self.filter(Q(locked=False) & Q(active=True) & Q(coa_model__active=True))
 
     def available(self) -> 'AccountModelQuerySet':
-        return self.filter(
-            Q(locked=False) &
-            Q(active=True) &
-            Q(coa_model__active=True)
-        )
+        return self.filter(Q(locked=False) & Q(active=True) & Q(coa_model__active=True))
 
     def for_bill(self) -> 'AccountModelQuerySet':
         """
@@ -312,10 +326,7 @@ class AccountModelQuerySet(LedgerMPNodeQuerySet):
         if user_model.is_superuser:
             return self
 
-        return self.filter(
-            Q(coa_model__entity__admin=user_model) |
-            Q(coa_model__entity__managers__in=[user_model])
-        )
+        return self.filter(Q(coa_model__entity__admin=user_model) | Q(coa_model__entity__managers__in=[user_model]))
 
 
 class AccountModelManager(MP_NodeManager):
@@ -336,23 +347,23 @@ class AccountModelManager(MP_NodeManager):
         AccountModelQuerySet
             An instance of AccountModelQuerySet ordered by 'path' and prefetching related 'coa_model'.
         """
-        return AccountModelQuerySet(
-            self.model,
-            using=self._db
-        ).order_by('path').select_related(
-            'coa_model'
-        ).annotate(
-            _coa_slug=F('coa_model__slug'),
-            _coa_active=F('coa_model__active'),
-            _entity_slug=F('coa_model__entity__slug'),
+        return (
+            AccountModelQuerySet(self.model, using=self._db, hints=self._hints)
+            .order_by('path')
+            .select_related('coa_model')
+            .annotate(
+                _coa_slug=F('coa_model__slug'),
+                _coa_active=F('coa_model__active'),
+                _entity_slug=F('coa_model__entity__slug'),
+            )
         )
 
     @deprecated_entity_slug_behavior
     def for_entity(
-            self,
-            entity_model: Union['EntityModel | str | UUID'] = None,
-            coa_model: Optional['ChartOfAccountModel | str | UUID'] = None,
-            **kwargs
+        self,
+        entity_model: Union['EntityModel | str | UUID'] = None,
+        coa_model: Optional['ChartOfAccountModel | str | UUID'] = None,
+        **kwargs,
     ) -> AccountModelQuerySet:
         """
         Filters the queryset for an entity and, optionally, a chart of account (COA) model.
@@ -402,7 +413,7 @@ class AccountModelManager(MP_NodeManager):
                 'user_model parameter is deprecated and will be removed in a future release. '
                 'Use for_user(user_model).for_entity(entity_model) instead to keep current behavior.',
                 DeprecationWarning,
-                stacklevel=2
+                stacklevel=2,
             )
             if DJANGO_LEDGER_USE_DEPRECATED_BEHAVIOR:
                 qs = qs.for_user(kwargs['user_model'])
@@ -467,10 +478,7 @@ class AccountModelAbstract(MP_Node, CreateUpdateMixIn):
         Reference to the associated ChartOfAccountModel.
     """
 
-    BALANCE_TYPE = [
-        (CREDIT, _('Credit')),
-        (DEBIT, _('Debit'))
-    ]
+    BALANCE_TYPE = [(CREDIT, _('Credit')), (DEBIT, _('Debit'))]
 
     uuid = models.UUIDField(default=uuid4, editable=False, primary_key=True)
     code = models.CharField(max_length=10, verbose_name=_('Account Code'), validators=[account_code_validator])
@@ -480,9 +488,9 @@ class AccountModelAbstract(MP_Node, CreateUpdateMixIn):
     balance_type = models.CharField(max_length=6, choices=BALANCE_TYPE, verbose_name=_('Account Balance Type'))
     locked = models.BooleanField(default=False, verbose_name=_('Locked'))
     active = models.BooleanField(default=False, verbose_name=_('Active'))
-    coa_model = models.ForeignKey('django_ledger.ChartOfAccountModel',
-                                  on_delete=models.CASCADE,
-                                  verbose_name=_('Chart of Accounts'))
+    coa_model = models.ForeignKey(
+        'django_ledger.ChartOfAccountModel', on_delete=models.CASCADE, verbose_name=_('Chart of Accounts')
+    )
     objects = AccountModelManager.from_queryset(queryset_class=AccountModelQuerySet)()
 
     class Meta:
@@ -494,13 +502,13 @@ class AccountModelAbstract(MP_Node, CreateUpdateMixIn):
             UniqueConstraint(
                 fields=('coa_model', 'code'),
                 name='unique_code_for_coa_model',
-                violation_error_message=_('Account codes must be unique for each Chart of Accounts Model.')
+                violation_error_message=_('Account codes must be unique for each Chart of Accounts Model.'),
             ),
             UniqueConstraint(
                 fields=('coa_model', 'role', 'role_default'),
                 name='only_one_account_assigned_as_default_for_role',
-                violation_error_message=_('Only one default account for role permitted.')
-            )
+                violation_error_message=_('Only one default account for role permitted.'),
+            ),
         ]
         indexes = [
             models.Index(fields=['role']),
@@ -508,16 +516,12 @@ class AccountModelAbstract(MP_Node, CreateUpdateMixIn):
             models.Index(fields=['active']),
             models.Index(fields=['locked']),
             models.Index(fields=['coa_model', 'code']),
-            models.Index(fields=['code'])
+            models.Index(fields=['code']),
         ]
 
     def __str__(self):
         return '{x1} - {x5}: {x2} ({x3}/{x4})'.format(
-            x1=self.role_bs.upper(),
-            x2=self.name,
-            x3=self.role.upper(),
-            x4=self.balance_type,
-            x5=self.code
+            x1=self.role_bs.upper(), x2=self.name, x3=self.role.upper(), x4=self.balance_type, x5=self.code
         )
 
     def alt_str(self):
@@ -557,29 +561,31 @@ class AccountModelAbstract(MP_Node, CreateUpdateMixIn):
     @property
     def entity_slug(self):
         """
-            Retrieve the slug value associated with the entity.
+        Retrieve the slug value associated with the entity.
 
-            This property method returns the value of the private attribute
-            '_entity_slug' for the current instance. The purpose of the
-            slug is typically to provide a URL-friendly string representing
-            the entity.
+        This property method returns the value of the private attribute
+        '_entity_slug' for the current instance. The purpose of the
+        slug is typically to provide a URL-friendly string representing
+        the entity.
 
-            Returns
-            -------
-            Any
-                The value of the '_entity_slug' attribute.
+        Returns
+        -------
+        Any
+            The value of the '_entity_slug' attribute.
         """
         return getattr(self, '_entity_slug')
 
     @classmethod
-    def create_account(cls,
-                       name: str,
-                       role: bool,
-                       balance_type: str,
-                       is_role_default: bool = False,
-                       locked: bool = False,
-                       active: bool = False,
-                       **kwargs):
+    def create_account(
+        cls,
+        name: str,
+        role: bool,
+        balance_type: str,
+        is_role_default: bool = False,
+        locked: bool = False,
+        active: bool = False,
+        **kwargs,
+    ):
         """
         Create a new AccountModel instance, managing parent/child relationships properly.
 
@@ -616,7 +622,7 @@ class AccountModelAbstract(MP_Node, CreateUpdateMixIn):
             role_default=is_role_default,
             locked=locked,
             active=active,
-            **kwargs
+            **kwargs,
         )
         account_model.clean()
         account_model = cls.objects.add_root(instance=account_model)
@@ -797,9 +803,7 @@ class AccountModelAbstract(MP_Node, CreateUpdateMixIn):
         bool
             True if the object is inactive, otherwise False.
         """
-        return all([
-            self.active is False
-        ])
+        return all([self.active is False])
 
     def can_deactivate(self):
         """
@@ -812,19 +816,13 @@ class AccountModelAbstract(MP_Node, CreateUpdateMixIn):
         bool
             True if the object is currently active and can be deactivated, otherwise False.
         """
-        return all([
-            self.active is True
-        ])
+        return all([self.active is True])
 
     def can_lock(self):
-        return all([
-            self.locked is False
-        ])
+        return all([self.locked is False])
 
     def can_unlock(self):
-        return all([
-            self.locked is True
-        ])
+        return all([self.locked is True])
 
     def lock(self, commit: bool = True, raise_exception: bool = True, **kwargs):
         if not self.can_lock():
@@ -836,10 +834,7 @@ class AccountModelAbstract(MP_Node, CreateUpdateMixIn):
 
         self.locked = True
         if commit:
-            self.save(update_fields=[
-                'locked',
-                'updated'
-            ])
+            self.save(update_fields=['locked', 'updated'])
 
     def unlock(self, commit: bool = True, raise_exception: bool = True, **kwargs):
         if not self.can_unlock():
@@ -851,10 +846,7 @@ class AccountModelAbstract(MP_Node, CreateUpdateMixIn):
 
         self.locked = False
         if commit:
-            self.save(update_fields=[
-                'locked',
-                'updated'
-            ])
+            self.save(update_fields=['locked', 'updated'])
 
     def activate(self, commit: bool = True, raise_exception: bool = True, **kwargs):
         """
@@ -878,10 +870,7 @@ class AccountModelAbstract(MP_Node, CreateUpdateMixIn):
             return
         self.active = True
         if commit:
-            self.save(update_fields=[
-                'active',
-                'updated'
-            ])
+            self.save(update_fields=['active', 'updated'])
 
     def deactivate(self, commit: bool = True, raise_exception: bool = True, **kwargs):
         """
@@ -905,11 +894,7 @@ class AccountModelAbstract(MP_Node, CreateUpdateMixIn):
             return
         self.active = False
         if commit:
-            self.save(
-                update_fields=[
-                    'active',
-                    'updated'
-                ])
+            self.save(update_fields=['active', 'updated'])
 
     def can_transact(self) -> bool:
         """
@@ -925,10 +910,7 @@ class AccountModelAbstract(MP_Node, CreateUpdateMixIn):
         2. The entity must not be locked.
         3. The entity itself must be active.
         """
-        return all([
-            self.is_coa_active(),
-            not self.is_locked()
-        ])
+        return all([self.is_coa_active(), not self.is_locked()])
 
     def get_code_prefix(self) -> str:
         """
@@ -1008,11 +990,7 @@ class AccountModelAbstract(MP_Node, CreateUpdateMixIn):
             A filtered set of account models suitable for moving the current instance under.
         """
         return self.coa_model.accountmodel_set.filter(
-            role__in=[
-                self.role,
-                self.get_root_role(),
-                *VALID_PARENTS.get(self.role, [])
-            ],
+            role__in=[self.role, self.get_root_role(), *VALID_PARENTS.get(self.role, [])],
         ).exclude(uuid__exact=self.uuid)
 
     def get_bs_bucket(self) -> str:
@@ -1065,70 +1043,43 @@ class AccountModelAbstract(MP_Node, CreateUpdateMixIn):
     def get_absolute_url(self) -> str:
         return reverse(
             viewname='django_ledger:account-detail',
-            kwargs={
-                'account_pk': self.uuid,
-                'entity_slug': self.entity_slug,
-                'coa_slug': self.coa_slug
-            }
+            kwargs={'account_pk': self.uuid, 'entity_slug': self.entity_slug, 'coa_slug': self.coa_slug},
         )
 
     def get_update_url(self) -> str:
         return reverse(
             viewname='django_ledger:account-update',
-            kwargs={
-                'account_pk': self.uuid,
-                'entity_slug': self.entity_slug,
-                'coa_slug': self.coa_slug
-            }
+            kwargs={'account_pk': self.uuid, 'entity_slug': self.entity_slug, 'coa_slug': self.coa_slug},
         )
 
     def get_action_deactivate_url(self) -> str:
         return reverse(
             viewname='django_ledger:account-action-deactivate',
-            kwargs={
-                'account_pk': self.uuid,
-                'entity_slug': self.entity_slug,
-                'coa_slug': self.coa_slug
-            }
+            kwargs={'account_pk': self.uuid, 'entity_slug': self.entity_slug, 'coa_slug': self.coa_slug},
         )
 
     def get_action_activate_url(self) -> str:
         return reverse(
             viewname='django_ledger:account-action-activate',
-            kwargs={
-                'account_pk': self.uuid,
-                'entity_slug': self.entity_slug,
-                'coa_slug': self.coa_slug
-            }
+            kwargs={'account_pk': self.uuid, 'entity_slug': self.entity_slug, 'coa_slug': self.coa_slug},
         )
 
     def get_action_lock_url(self) -> str:
         return reverse(
             viewname='django_ledger:account-action-lock',
-            kwargs={
-                'account_pk': self.uuid,
-                'entity_slug': self.entity_slug,
-                'coa_slug': self.coa_slug
-            }
+            kwargs={'account_pk': self.uuid, 'entity_slug': self.entity_slug, 'coa_slug': self.coa_slug},
         )
 
     def get_action_unlock_url(self) -> str:
         return reverse(
             viewname='django_ledger:account-action-unlock',
-            kwargs={
-                'account_pk': self.uuid,
-                'entity_slug': self.entity_slug,
-                'coa_slug': self.coa_slug
-            }
+            kwargs={'account_pk': self.uuid, 'entity_slug': self.entity_slug, 'coa_slug': self.coa_slug},
         )
 
     def get_coa_account_list_url(self) -> str:
         return reverse(
-            viewname='django_ledger:account-list',
-            kwargs={
-                'entity_slug': self.entity_slug,
-                'coa_slug': self.coa_slug
-            })
+            viewname='django_ledger:account-list', kwargs={'entity_slug': self.entity_slug, 'coa_slug': self.coa_slug}
+        )
 
     def clean(self):
         if not self.code and DJANGO_LEDGER_ACCOUNT_CODE_GENERATE:
@@ -1137,8 +1088,9 @@ class AccountModelAbstract(MP_Node, CreateUpdateMixIn):
         if DJANGO_LEDGER_ACCOUNT_CODE_USE_PREFIX:
             pf = self.get_code_prefix()
             if self.code[0] != pf:
-                raise AccountModelValidationError(f'Account {self.get_role_display()} code {self.code} '
-                                                  f'must start with {pf} for CoA consistency')
+                raise AccountModelValidationError(
+                    f'Account {self.get_role_display()} code {self.code} must start with {pf} for CoA consistency'
+                )
 
 
 class AccountModel(AccountModelAbstract):

@@ -174,6 +174,37 @@ python manage.py test django_ledger.tests.api.test_closing_entry_api
 
 ## Contribution notes
 
+### Upstream 0.8.5 integration
+
+The private fork includes upstream master through `ecbd0663329ffee0b9f433aeaa56c12e012305d7`.
+The merge preserves the swappable models, Treebeard 7 native managers, bounded
+entity slug generation and guarded typing imports. Migration
+`0041_merge_upstream_account_roles` joins upstream's role choices with the
+existing `0040_receipt_model_swappable` leaf; it does not rewrite applied
+migrations or create financial transactions.
+
+`test_upstream_085_compatibility_api.py` protects the compatibility boundaries:
+
+* `COGS` remains an alias for the persisted `cogs_regular` role.
+* Legacy `GROUP_IC_*` names retain their original scopes; new `GROUP_PNL_*`
+  groups expose the expanded upstream classifications.
+* Direct `python_digest(equity_only=True)` retains the earnings filter rather
+  than silently broadening it after the upstream keyword rename.
+* Default product and service factories select regular COGS even when every
+  new cost subtype has its own default account.
+* Account-tree setup rolls back atomically on failure and restores the routing
+  context. The new no-return account creation option still persists the account.
+
+The default API run skips tests whose custom models are not installed. A full
+private-fork acceptance must also run those tests using their documented
+`django_ledger.tests.settings_swappable_*` settings. A skip is not a pass.
+Keep each settings process and test database isolated; do not change the
+application's user model or swappable settings to make these tests run.
+
+Lemuur's independently pinned runtime dependencies remain authoritative for
+its integration tests; upstream's development lockfile is not a request to
+upgrade the deployed Django runtime.
+
 ### Model typing imports
 
 `test_model_typing_contract.py` protects the account and entity-unit forward

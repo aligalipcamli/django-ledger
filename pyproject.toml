@@ -1,16 +1,16 @@
 [project]
 name = "django-ledger"
-version = "0.8.4"
+version = "0.8.5"
 readme = "README.md"
 requires-python = ">=3.11"
 description = "Double entry accounting system built on the Django Web Framework."
 keywords = ["django", "finance", "bookkeeping", "accounting", "balance sheet", "income statement", "general ledger", "money", "engine"]
 license = "GPL-3.0-or-later"
 authors = [
-    { name = "Miguel Sanda", email = "msanda@arrobalytics.com" }
+    { name = "Miguel Sanda", email = "msanda@edmagroup.com" }
 ]
 maintainers = [
-    { name = "Miguel Sanda", email = "msanda@arrobalytics.com" }
+    { name = "Miguel Sanda", email = "msanda@edmagroup.com" }
 ]
 dependencies = [
     "django>=4.2",
@@ -28,6 +28,7 @@ classifiers = [
     "Topic :: Office/Business :: Financial :: Accounting",
     "Framework :: Django :: 4.0",
     "Framework :: Django :: 5.0",
+    "Framework :: Django :: 6.0",
     "Intended Audience :: Financial and Insurance Industry",
     "Intended Audience :: End Users/Desktop"
 ]
